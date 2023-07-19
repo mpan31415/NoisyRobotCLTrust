@@ -1,3 +1,7 @@
 
 ros2_ws/src/examples/
 ros2_ws/src/ros_tutorials/
+
+ros2_ws/build
+ros2_ws/install
+ros2_ws/log
