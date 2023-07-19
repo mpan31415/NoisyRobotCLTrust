@@ -5,7 +5,3 @@ ros2_ws/src/ros_tutorials/
 ros2_ws/build
 ros2_ws/install
 ros2_ws/log
-
-franka_ws/build
-franka_ws/install
-franka_ws/log
