@@ -6,7 +6,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 
-#include "tutorial_interfaces/msg/falconpos.hpp"  
+#include "tutorial_interfaces/msg/falconpos.hpp"
 
 #include <stdio.h>
 #include "dhdc.h"
@@ -33,13 +33,56 @@ public:
   { 
     choice = a_choice;
     publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
+
+    // if (choice == 0) {
+    //   timer_ = this->create_wall_timer(
+    //   1ms, std::bind(&PositionPublisher::free_timer_callback, this));
+    // } else {
+    //   timer_ = this->create_wall_timer(
+    //   1ms, std::bind(&PositionPublisher::constrained_timer_callback, this));
+    // }
+    
     timer_ = this->create_wall_timer(
-      1ms, std::bind(&PositionPublisher::timer_callback, this));
+      1ms, std::bind(&PositionPublisher::constrained_timer_callback, this));
   }
 
 
 private:
-  void timer_callback()
+
+  void free_timer_callback()
+  { 
+    ///////////////////////// FALCON STUFF /////////////////////////
+    dhdGetPosition(&(p[0]), &(p[1]), &(p[2]));
+    dhdGetLinearVelocity (&(v[0]), &(v[1]), &(v[2]));
+    
+    ////////////////////// centre it within the first 2 seconds //////////////////////
+    if (count < count_thres2) {
+      for (int i=0; i<3; i++) f[i] = - K * p[i] - C * v[i];
+      if (dhdSetForceAndTorqueAndGripperForce (f[0], f[1], f[2], 0.0, 0.0, 0.0, 0.0) < DHD_NO_ERROR) {
+        printf ("error: cannot set force (%s)\n", dhdErrorGetLastStr());
+        printf ("\n\n=============================== THANK YOU FOR FLYING WITH FALCON ===============================\n\n");
+        rclcpp::shutdown();
+      }
+    }
+
+    auto message = tutorial_interfaces::msg::Falconpos();
+    message.x = p[0] * 100;
+    message.y = p[1] * 100;
+    message.z = p[2] * 100;
+    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    publisher_->publish(message);
+
+    if (dhdKbHit() && dhdKbGet() == 'q') {
+        printf ("\n\n=============================== THANK YOU FOR FLYING WITH FALCON ===============================\n\n");
+        rclcpp::shutdown();
+    }
+
+    ///////////////////// Increase the count every 1ms (frequency at which the function is called)
+    count++;
+  }
+
+
+  void constrained_timer_callback()
   { 
     ///////////////////////// FALCON STUFF /////////////////////////
     dhdGetPosition(&(p[0]), &(p[1]), &(p[2]));
@@ -124,7 +167,7 @@ int main(int argc, char * argv[])
   
 
   ///////////////// CHOOSE YOUR MODE! /////////////////
-  int choice = 1;
+  int choice = 0;
 
 
   std::shared_ptr<PositionPublisher> michael = std::make_shared<PositionPublisher>(choice);

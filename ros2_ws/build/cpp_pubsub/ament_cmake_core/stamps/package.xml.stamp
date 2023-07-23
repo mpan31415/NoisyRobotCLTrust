@@ -16,12 +16,20 @@
   <test_depend>ament_lint_common</test_depend>
 
   <exec_depend>tutorial_interfaces</exec_depend>
+  <!-- <exec_depend>builtin_interfaces</exec_depend> -->
 
   <export>
     <build_type>ament_cmake</build_type>
     <depend>rclcpp</depend>
     <depend>rclpy</depend>
+
     <depend>std_msgs</depend>
+    <depend>trajectory_msgs</depend>
+    <depend>sensor_msgs</depend>
+    <depend>kdl_parser</depend>
+
+    <depend>scipy</depend>
+    <depend>kinpy</depend>
     <depend>dhd</depend>
     <depend>drd</depend>
   </export>

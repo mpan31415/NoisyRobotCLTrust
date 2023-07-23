@@ -18,6 +18,14 @@ find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(trajectory_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(kdl_parser REQUIRED)
+
+# find_package(scipy REQUIRED)
+# find_package(kinpy REQUIRED)
+
+# find_package(builtin_interfaces REQUIRED)
 
 find_package(tutorial_interfaces REQUIRED)   
 
@@ -51,11 +59,15 @@ target_link_libraries(position_talker /usr/local/lib/libdhd.so.3
                                       # /usr/local/lib/libdrd.so.3.15.0
 )
 
+add_executable(cartesian_controller src/cartesian_controller.cpp)
+ament_target_dependencies(cartesian_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
+
 install(TARGETS
   talker
   listener
   encoder_talker
   position_talker
+  cartesian_controller
   DESTINATION lib/${PROJECT_NAME})
 
 
@@ -68,6 +80,8 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/basic_subscriber.py
+  scripts/joint_controller.py
+  scripts/gazebo_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
