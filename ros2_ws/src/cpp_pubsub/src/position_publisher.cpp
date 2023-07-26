@@ -24,7 +24,7 @@ public:
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
-  double K = 200.0;
+  double K = 200.0;     //////////////////// -> this is the initial gain value K, will be changed after a few seconds!
   double C = 5.0;      //////////// -> having this higher will cause vibrations
   int choice;
 
@@ -43,56 +43,28 @@ public:
     // }
     
     timer_ = this->create_wall_timer(
-      1ms, std::bind(&PositionPublisher::constrained_timer_callback, this));
+      1ms, std::bind(&PositionPublisher::timer_callback, this)); ///////// publishing at 1000 Hz /////////
   }
 
 
 private:
 
-  void free_timer_callback()
+  void timer_callback()
   { 
     ///////////////////////// FALCON STUFF /////////////////////////
     dhdGetPosition(&(p[0]), &(p[1]), &(p[2]));
     dhdGetLinearVelocity (&(v[0]), &(v[1]), &(v[2]));
-    
-    ////////////////////// centre it within the first 2 seconds //////////////////////
+
     if (count < count_thres2) {
+      // gradually perform centering {in increasing levels of K = 1000 -> K = 2000, after 1 -> 2 seconds}
       for (int i=0; i<3; i++) f[i] = - K * p[i] - C * v[i];
-      if (dhdSetForceAndTorqueAndGripperForce (f[0], f[1], f[2], 0.0, 0.0, 0.0, 0.0) < DHD_NO_ERROR) {
-        printf ("error: cannot set force (%s)\n", dhdErrorGetLastStr());
-        printf ("\n\n=============================== THANK YOU FOR FLYING WITH FALCON ===============================\n\n");
-        rclcpp::shutdown();
-      }
-    }
-
-    auto message = tutorial_interfaces::msg::Falconpos();
-    message.x = p[0] * 100;
-    message.y = p[1] * 100;
-    message.z = p[2] * 100;
-    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
-    publisher_->publish(message);
-
-    if (dhdKbHit() && dhdKbGet() == 'q') {
-        printf ("\n\n=============================== THANK YOU FOR FLYING WITH FALCON ===============================\n\n");
-        rclcpp::shutdown();
-    }
-
-    ///////////////////// Increase the count every 1ms (frequency at which the function is called)
-    count++;
-  }
-
-
-  void constrained_timer_callback()
-  { 
-    ///////////////////////// FALCON STUFF /////////////////////////
-    dhdGetPosition(&(p[0]), &(p[1]), &(p[2]));
-    dhdGetLinearVelocity (&(v[0]), &(v[1]), &(v[2]));
-
-    switch (choice) {
+    } else {
+      switch (choice) {
         case 0: for (int i=0; i<3; i++) f[i] = 0; break;
         case 1: for (int i=0; i<1; i++) f[i] = - K * p[i] - C * v[i]; break;
         case 2: for (int i=0; i<2; i++) f[i] = - K * p[i] - C * v[i]; break;
         case 3: for (int i=0; i<3; i++) f[i] = - K * p[i] - C * v[i]; break;
+      }
     }
 
     if (dhdSetForceAndTorqueAndGripperForce (f[0], f[1], f[2], 0.0, 0.0, 0.0, 0.0) < DHD_NO_ERROR) {
@@ -113,15 +85,43 @@ private:
         rclcpp::shutdown();
     }
 
+    // only run if the button is pressed (or) the reset condition is active
+    if (dhdGetButton (0) == DHD_ON || reset == true) {
+      if (!reset) {
+        reset = true;
+        printf ("\n\n=============================== RE-CENTERING IN 1 SECOND ===============================\n\n");
+      }
+      reset_count++;
+      if (reset_count == count_thres1) {
+        // this is 1 second after the button has been pressed
+        // need to reset {count, reset_count, reset, K, C}
+        printf ("\n\n=============================== CENTERING NOW !!! ===============================\n\n");
+        count = 0;
+        reset_count = 0;
+        reset = false;
+        K = 100.0;
+        C = 5.0;
+      }
+    }
+
     count++;
     if (count > count_thres1) K = 1000.0;
     if (count > count_thres2) K = 2000.0;
+
   }
+
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr publisher_;
-  const int count_thres1 = 1000;   // -> corresponds to 1 second wait time
-  const int count_thres2 = 2000;   // -> corresponds to 2 second wait time
+
+  const int count_thres1 = 1000;   // 1 second
+  const int count_thres2 = 1500;   // 1.5 seconds
+  const int count_thres3 = 2000;   // 2 seconds
+
   int count {0};
+  int reset_count {0};
+
+  bool reset = false;
+
 };
 
 
@@ -133,12 +133,7 @@ private:
 int main(int argc, char * argv[])
 {   
 
-  ////////////////// INITIALIZE AND SPIN ROS NODE ////////////////
   rclcpp::init(argc, argv);
-
-
-
-  //////////////////////// FALCON STUFF /////////////////////
 
   // message
   printf ("Force Dimension - Position Example (By Michael Pan) %s\n", dhdGetSDKVersionStr());
@@ -164,7 +159,6 @@ int main(int argc, char * argv[])
   dhdEnableForce (DHD_ON);
   dhdEmulateButton (DHD_ON);
 
-  
 
   ///////////////// CHOOSE YOUR MODE! /////////////////
   int choice = 0;
@@ -173,15 +167,6 @@ int main(int argc, char * argv[])
   std::shared_ptr<PositionPublisher> michael = std::make_shared<PositionPublisher>(choice);
 
   rclcpp::spin(michael);
-
-
-
-
-
-
-
-  //////////////////////////////////////////////////////////////////////////////////
-
 
 //   rclcpp::shutdown();
   return 0;
