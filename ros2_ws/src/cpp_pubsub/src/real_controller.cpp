@@ -31,16 +31,18 @@ using namespace std::chrono_literals;
 const std::string urdf_path = "/home/michael/FOR_TESTING/panda.urdf";
 const unsigned int n_joints = 7;
 
+const std::vector<double> lower_joint_limits {-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973};
+const std::vector<double> upper_joint_limits {2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973};
+
+const bool display_time = true;
+
 KDL::Tree panda_tree;
 KDL::Chain panda_chain;
 
 KDL::Rotation orientation;
 bool got_orientation = false;
 
-const bool display_time = true;
-
-const std::vector<double> lower_joint_limits {-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973};
-const std::vector<double> upper_joint_limits {2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973};
+std::vector<double> tcp_pos {0.3069, 0.0, 0.4853};   // initialized the same as the "home" position
 
 
 /////////////////// function declarations ///////////////////
@@ -60,21 +62,25 @@ class RealController : public rclcpp::Node
 {
 public:
   
-  std::vector<double> falcon_pos {0.0, 0.0, 0.0};
+  std::vector<double> offset_pos {0.0, 0.0, 0.0};
   std::vector<double> origin {0.3069, 0.0, 0.4853}; //////// can change the task-space origin point! ////////
 
   std::vector<double> curr_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<double> control_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
   
-  const int mapping_ratio = 1;   /////// this ratio is {end-effector movement} / {Falcon movement}
+  const int mapping_ratio = 0.5;    /////// this ratio is {end-effector movement} / {Falcon movement}
 
   RealController()
   : Node("real_controller")
   { 
     //Create publisher and subscriber and timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
-    timer_ = this->create_wall_timer(5ms, std::bind(&RealController::controller_publisher, this));    // controls at 200 Hz
+    controller_timer_ = this->create_wall_timer(10ms, std::bind(&RealController::controller_publisher, this));    // controls at 100 Hz
+
+    //Create publisher and subscriber and timer
+    tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
+    tcp_pos_timer_ = this->create_wall_timer(5ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 200 Hz
 
     joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
@@ -99,7 +105,7 @@ private:
       message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
       ///////// compute IK /////////
-      compute_ik(falcon_pos, origin, curr_joint_vals, control_joint_vals);
+      compute_ik(offset_pos, origin, curr_joint_vals, control_joint_vals);
 
       std::cout << "The new joint values [control] are ";
       print_joint_vals(control_joint_vals);
@@ -120,19 +126,27 @@ private:
     }
   }
 
+  ///////////////////////////////////// TCP POSITION PUBLISHER /////////////////////////////////////
+  void tcp_pos_publisher()
+  { 
+    auto message = tutorial_interfaces::msg::Falconpos();
+    message.x = tcp_pos.at(0);
+    message.y = tcp_pos.at(1);
+    message.z = tcp_pos.at(2);
+
+    // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
+    tcp_pos_pub_->publish(message);
+  }
+
   ///////////////////////////////////// JOINT STATES SUBSCRIBER /////////////////////////////////////
   void joint_states_callback(const sensor_msgs::msg::JointState & msg)
   { 
     auto data = msg.position;
 
     // write into our class variable for storing joint values
-    curr_joint_vals.at(0) = data.at(0);
-    curr_joint_vals.at(1) = data.at(1);
-    curr_joint_vals.at(2) = data.at(7);
-    curr_joint_vals.at(3) = data.at(2);
-    curr_joint_vals.at(4) = data.at(3);
-    curr_joint_vals.at(5) = data.at(4);
-    curr_joint_vals.at(6) = data.at(5);
+    for (int i=0; i<n_joints; i++) {
+      curr_joint_vals.at(i) = data.at(i);
+    }
 
     // std::cout << "The current joint values [Gazebo] are ";
     // print_joint_vals(curr_joint_vals);
@@ -144,14 +158,19 @@ private:
   ///////////////////////////////////// FALCON SUBSCRIBER /////////////////////////////////////
   void falcon_pos_callback(const tutorial_interfaces::msg::Falconpos & msg)
   { 
-    falcon_pos.at(0) = msg.x / 100 * mapping_ratio;
-    falcon_pos.at(1) = msg.y / 100 * mapping_ratio;
-    falcon_pos.at(2) = msg.z / 100 * mapping_ratio;
+    offset_pos.at(0) = msg.x / 100 * mapping_ratio;
+    offset_pos.at(1) = msg.y / 100 * mapping_ratio;
+    offset_pos.at(2) = msg.z / 100 * mapping_ratio;
   }
 
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr controller_pub_;
-  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::TimerBase::SharedPtr controller_timer_;
+
+  rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr tcp_pos_pub_;
+  rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
+
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_vals_sub_;
+
   rclcpp::Subscription<tutorial_interfaces::msg::Falconpos>::SharedPtr falcon_pos_sub_;
   
 };
@@ -160,7 +179,7 @@ private:
 
 /////////////////////////////// my own ik function ///////////////////////////////
 
-void compute_ik(std::vector<double>& p, std::vector<double>& origin, std::vector<double>& curr_joint_vals, std::vector<double>& control_joint_vals) {
+void compute_ik(std::vector<double>& offset, std::vector<double>& origin, std::vector<double>& curr_joint_vals, std::vector<double>& control_joint_vals) {
 
   auto start = std::chrono::high_resolution_clock::now();
 
@@ -184,8 +203,13 @@ void compute_ik(std::vector<double>& p, std::vector<double>& origin, std::vector
     got_orientation = true;
   }
 
+  for (unsigned int i=0; i<3; i++) {
+    tcp_pos.at(i) = origin.at(i) + offset.at(i);
+  }
+
   //Create the task-space goal object
-  KDL::Vector vec_tcp_pos_goal(p.at(0) + origin.at(0), p.at(1) + origin.at(1), p.at(2) + origin.at(2));
+  KDL::Vector vec_tcp_pos_goal(origin.at(0), origin.at(1), origin.at(2));
+  // KDL::Vector vec_tcp_pos_goal(offset.at(0) + origin.at(0), offset.at(1) + origin.at(1), offset.at(2) + origin.at(2));
   KDL::Frame tcp_pos_goal(orientation, vec_tcp_pos_goal);
 
   //Compute inverse kinematics
@@ -214,14 +238,6 @@ bool within_limits(std::vector<double>& vals) {
   }
   return true;
 }
-
-
-// within_limits(vals):
-//     for i in range(size(vals)):
-//         if val < lower_joint_limits[i] or val > upper_joint_limits[i]:
-//             return false
-//     return true
-
 
 bool create_tree() {
   if (!kdl_parser::treeFromFile(urdf_path, panda_tree)){
