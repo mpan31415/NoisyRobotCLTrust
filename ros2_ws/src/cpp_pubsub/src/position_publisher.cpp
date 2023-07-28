@@ -77,8 +77,15 @@ private:
     message.x = p[0] * 100;
     message.y = p[1] * 100;
     message.z = p[2] * 100;
+
     RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    // This allows in-line printing
+    // for (int i=0; i<3; i++) printf ("p[%d] = %03f, ", i, p[i]*100);
+    // printf ("          \r");
+
     publisher_->publish(message);
+
+
 
     if (dhdKbHit() && dhdKbGet() == 'q') {
         printf ("\n\n=============================== THANK YOU FOR FLYING WITH FALCON ===============================\n\n");
@@ -160,8 +167,13 @@ int main(int argc, char * argv[])
   dhdEmulateButton (DHD_ON);
 
 
+
   ///////////////// CHOOSE YOUR MODE! /////////////////
+
   int choice = 0;
+
+  ///////////////// CHOOSE YOUR MODE! /////////////////
+
 
 
   std::shared_ptr<PositionPublisher> michael = std::make_shared<PositionPublisher>(choice);

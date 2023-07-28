@@ -76,6 +76,7 @@ install(TARGETS
 
 
 
+
 ############################################ Python nodes ############################################
 
 # Install Python modules
@@ -88,6 +89,15 @@ install(PROGRAMS
   scripts/gazebo_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
+
+
+############################################ Launch files ############################################
+
+install(
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
 
 
 

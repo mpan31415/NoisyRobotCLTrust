@@ -26,7 +26,7 @@ def generate_launch_description():
             description='Hostname or IP address of the robot.'),
         DeclareLaunchArgument(
             use_rviz_parameter_name,
-            default_value='true',                       ### this was originally false
+            default_value='false',                       ### this was originally false
             description='Visualize the robot in Rviz'),
         DeclareLaunchArgument(
             use_fake_hardware_parameter_name,
@@ -56,25 +56,23 @@ def generate_launch_description():
 
 
         ############################## THE FOLLOWING ARE MY OWN NODES ##############################
-        
+
         Node(
             package='controller_manager',
             executable='spawner',
-            arguments=['gravity_compensation_example_controller'],
+            arguments=['joint_trajectory_controller'],
             output='screen',
-        ),
+            ),
 
         Node(
             package='cpp_pubsub',
-            namespace='position_talker',
             executable='position_talker',
             name='position_talker'
-        ),
+        )
 
-        Node(
-            package='cpp_pubsub',
-            namespace='real_controller',
-            executable='real_controller',
-            name='real_controller'
-        ),
+        # Node(
+        #     package='cpp_pubsub',
+        #     executable='real_controller',
+        #     name='real_controller'
+        # ),
     ])

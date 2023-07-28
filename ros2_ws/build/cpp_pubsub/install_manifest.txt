@@ -3,6 +3,7 @@
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/encoder_talker
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/position_talker
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/cartesian_controller
+/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/real_controller
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/environment/pythonpath.sh
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/environment/pythonpath.dsv
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub-0.0.0-py3.10.egg-info/dependency_links.txt
@@ -14,6 +15,7 @@
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/basic_subscriber.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/joint_controller.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/gazebo_controller.py
+/home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/launch/test.launch.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/ament_index/resource_index/package_run_dependencies/cpp_pubsub
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/ament_index/resource_index/parent_prefix_path/cpp_pubsub
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/environment/ament_prefix_path.sh

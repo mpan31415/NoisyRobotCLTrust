@@ -263,6 +263,19 @@ cartesian_controller/fast:
 .PHONY : cartesian_controller/fast
 
 #=============================================================================
+# Target rules for targets named real_controller
+
+# Build rule for target.
+real_controller: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 real_controller
+.PHONY : real_controller
+
+# fast build rule for target.
+real_controller/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/real_controller.dir/build.make CMakeFiles/real_controller.dir/build
+.PHONY : real_controller/fast
+
+#=============================================================================
 # Target rules for targets named ament_cmake_python_copy_cpp_pubsub
 
 # Build rule for target.
@@ -384,6 +397,30 @@ src/publisher_member_function.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/talker.dir/build.make CMakeFiles/talker.dir/src/publisher_member_function.cpp.s
 .PHONY : src/publisher_member_function.cpp.s
 
+src/real_controller.o: src/real_controller.cpp.o
+.PHONY : src/real_controller.o
+
+# target to build an object file
+src/real_controller.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/real_controller.dir/build.make CMakeFiles/real_controller.dir/src/real_controller.cpp.o
+.PHONY : src/real_controller.cpp.o
+
+src/real_controller.i: src/real_controller.cpp.i
+.PHONY : src/real_controller.i
+
+# target to preprocess a source file
+src/real_controller.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/real_controller.dir/build.make CMakeFiles/real_controller.dir/src/real_controller.cpp.i
+.PHONY : src/real_controller.cpp.i
+
+src/real_controller.s: src/real_controller.cpp.s
+.PHONY : src/real_controller.s
+
+# target to generate assembly for a file
+src/real_controller.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/real_controller.dir/build.make CMakeFiles/real_controller.dir/src/real_controller.cpp.s
+.PHONY : src/real_controller.cpp.s
+
 src/subscriber_member_function.o: src/subscriber_member_function.cpp.o
 .PHONY : src/subscriber_member_function.o
 
@@ -429,6 +466,7 @@ help:
 	@echo "... encoder_talker"
 	@echo "... listener"
 	@echo "... position_talker"
+	@echo "... real_controller"
 	@echo "... talker"
 	@echo "... src/cartesian_controller.o"
 	@echo "... src/cartesian_controller.i"
@@ -442,6 +480,9 @@ help:
 	@echo "... src/publisher_member_function.o"
 	@echo "... src/publisher_member_function.i"
 	@echo "... src/publisher_member_function.s"
+	@echo "... src/real_controller.o"
+	@echo "... src/real_controller.i"
+	@echo "... src/real_controller.s"
 	@echo "... src/subscriber_member_function.o"
 	@echo "... src/subscriber_member_function.i"
 	@echo "... src/subscriber_member_function.s"

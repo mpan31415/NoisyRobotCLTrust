@@ -46,7 +46,9 @@ std::vector<double> tcp_pos {0.3069, 0.0, 0.4853};   // initialized the same as 
 
 
 /////////////////// function declarations ///////////////////
-void compute_ik(std::vector<double>& p, std::vector<double>& origin, std::vector<double>& curr_joint_vals, std::vector<double>& control_joint_vals);
+void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_vals, std::vector<double>& res_vals);
+
+void get_robot_control(double t, std::vector<double>& vals);
 
 bool within_limits(std::vector<double>& vals);
 bool create_tree();
@@ -62,21 +64,44 @@ class RealController : public rclcpp::Node
 {
 public:
   
-  std::vector<double> offset_pos {0.0, 0.0, 0.0};
-  std::vector<double> origin {0.3069, 0.0, 0.4853}; //////// can change the task-space origin point! ////////
+  // std::vector<double> origin {0.3059, 0.0, 0.4846}; //////// can change the task-space origin point! ////////
+  std::vector<double> origin {0.4559, 0.0, 0.3346}; //////// can change the task-space origin point! ////////
+
+  std::vector<double> human_offset {0.0, 0.0, 0.0};
+  std::vector<double> robot_offset {0.0, 0.0, 0.0};
 
   std::vector<double> curr_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  std::vector<double> control_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  std::vector<double> ik_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  std::vector<double> message_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
   
-  const int mapping_ratio = 0.5;    /////// this ratio is {end-effector movement} / {Falcon movement}
+  const double mapping_ratio = 1.5;    /////// this ratio is {end-effector movement} / {Falcon movement}
+  const int control_freq = 20;   // the rate at which the "controller_publisher" function is called in [Hz]
+  const double latency = 2.0;  // this is the artificial latency introduced into the joint points published
 
+  // used to initially smoothly incorporate the Falcon offset
+  // meaning that {max_count = control_frequency * 10} -> corresponds to 10 seconds of "smoothing time"
+  const int max_count = control_freq * 10;
+  int count = 0;
+
+  double w = 0.0;  // this is the weight used for initial smoothing, which goes from 0 -> 1 as count goes from 0 -> max_count
+
+  // alpha values in {x, y, z} dimensions, used for convex combination of human and robot input
+  // alpha values correspond to the share of HUMAN INPUT
+  // they have to be in the range of [0, 1]
+  double ax = 1.0;
+  double ay = 1.0;
+  double az = 1.0;
+
+
+  ////////////////////////////////////////////////////////////////////////
   RealController()
   : Node("real_controller")
   { 
     //Create publisher and subscriber and timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
-    controller_timer_ = this->create_wall_timer(10ms, std::bind(&RealController::controller_publisher, this));    // controls at 100 Hz
+    controller_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::controller_publisher, this));    // controls at 20 Hz 
+    ////////////////// NOTE: the controller frequency should be kept quite low (20 Hz seems to be perfect) //////////////////
 
     //Create publisher and subscriber and timer
     tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
@@ -104,25 +129,47 @@ private:
       auto message = trajectory_msgs::msg::JointTrajectory();
       message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
+
+      // get the robot control offset in Cartesian space
+      double time = (double) count / control_freq;
+      get_robot_control(time, robot_offset);
+
+      // perform the convex combination of robot and human offsets
+      // also adding the origin and thus representing it as tcp_pos in the robot's base frame
+      tcp_pos.at(0) = origin.at(0) + ax * human_offset.at(0) + (1-ax) * robot_offset.at(0);
+      tcp_pos.at(1) = origin.at(1) + ay * human_offset.at(1) + (1-ay) * robot_offset.at(1);
+      tcp_pos.at(2) = origin.at(2) + az * human_offset.at(2) + (1-az) * robot_offset.at(2);
+
       ///////// compute IK /////////
-      compute_ik(offset_pos, origin, curr_joint_vals, control_joint_vals);
+      compute_ik(tcp_pos, curr_joint_vals, ik_joint_vals);
 
-      std::cout << "The new joint values [control] are ";
-      print_joint_vals(control_joint_vals);
+      ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
+      if (count < max_count) count++;  // increase count up to the max_count value
+      w = (double)count / max_count;
+      std::cout << "The current count is " << count << std::endl;
+      std::cout << "The current weight is " << w << std::endl;
+      for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);
 
-      if (!within_limits(control_joint_vals)) {
+      ///////// check limits /////////
+      if (!within_limits(message_joint_vals)) {
         std::cout << "--------\nThese violate the joint limits of the Panda arm, shutting down now !!!\n---------" << std::endl;
         rclcpp::shutdown();
       }
       
+      ///////// prepare the trajectory message, introducing artificial latency /////////
       auto point = trajectory_msgs::msg::JointTrajectoryPoint();
-      point.positions = control_joint_vals;
-      // point.time_from_start.nanosec = 100000;     //// matching the publishing frequency
+      point.positions = message_joint_vals;
+      point.time_from_start.nanosec = (int)(1000 / control_freq) * latency * 1000000;     //// => {milliseconds} * 1e6
 
       message.points = {point};
 
+      std::cout << "The joint values [MESSAGE] are ";
+      print_joint_vals(message_joint_vals);
+
       // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
       controller_pub_->publish(message);
+
+      
     }
   }
 
@@ -144,12 +191,9 @@ private:
     auto data = msg.position;
 
     // write into our class variable for storing joint values
-    for (int i=0; i<n_joints; i++) {
+    for (unsigned int i=0; i<n_joints; i++) {
       curr_joint_vals.at(i) = data.at(i);
     }
-
-    // std::cout << "The current joint values [Gazebo] are ";
-    // print_joint_vals(curr_joint_vals);
 
     /// if this the first iteration, change the control flag and start partying!
     if (control == false) control = true;
@@ -158,9 +202,10 @@ private:
   ///////////////////////////////////// FALCON SUBSCRIBER /////////////////////////////////////
   void falcon_pos_callback(const tutorial_interfaces::msg::Falconpos & msg)
   { 
-    offset_pos.at(0) = msg.x / 100 * mapping_ratio;
-    offset_pos.at(1) = msg.y / 100 * mapping_ratio;
-    offset_pos.at(2) = msg.z / 100 * mapping_ratio;
+    human_offset.at(0) = msg.x / 100 * mapping_ratio;
+    human_offset.at(1) = msg.y / 100 * mapping_ratio;
+    human_offset.at(2) = msg.z / 100 * mapping_ratio;
+    // std::cout << "x = " << human_offset.at(0) << ", " << "y = " << human_offset.at(1) << ", " << "z = " << human_offset.at(2) << std::endl;
   }
 
   rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr controller_pub_;
@@ -177,9 +222,22 @@ private:
 
 
 
+/////////////////////////////// robot control (trajectory following) function ///////////////////////////////
+
+void get_robot_control(double t, std::vector<double>& vals) {
+
+  // compute the coordinates of the time-parametrized trajectory (in Cartesian space)
+
+  for (unsigned int i=0; i<n_joints; i++) {
+    vals.at(i) = t;
+  }
+
+}
+
+
 /////////////////////////////// my own ik function ///////////////////////////////
 
-void compute_ik(std::vector<double>& offset, std::vector<double>& origin, std::vector<double>& curr_joint_vals, std::vector<double>& control_joint_vals) {
+void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_vals, std::vector<double>& res_vals) {
 
   auto start = std::chrono::high_resolution_clock::now();
 
@@ -191,7 +249,7 @@ void compute_ik(std::vector<double>& offset, std::vector<double>& origin, std::v
   //Create the KDL array of current joint values
   KDL::JntArray jnt_pos_start(n_joints);
   for (unsigned int i=0; i<n_joints; i++) {
-    jnt_pos_start(i) = curr_joint_vals.at(i);
+    jnt_pos_start(i) = curr_vals.at(i);
   }
 
   //Write in the initial orientation if not already done so
@@ -203,13 +261,9 @@ void compute_ik(std::vector<double>& offset, std::vector<double>& origin, std::v
     got_orientation = true;
   }
 
-  for (unsigned int i=0; i<3; i++) {
-    tcp_pos.at(i) = origin.at(i) + offset.at(i);
-  }
-
   //Create the task-space goal object
-  KDL::Vector vec_tcp_pos_goal(origin.at(0), origin.at(1), origin.at(2));
-  // KDL::Vector vec_tcp_pos_goal(offset.at(0) + origin.at(0), offset.at(1) + origin.at(1), offset.at(2) + origin.at(2));
+  // KDL::Vector vec_tcp_pos_goal(origin.at(0), origin.at(1), origin.at(2));
+  KDL::Vector vec_tcp_pos_goal(desired_tcp_pos.at(0), desired_tcp_pos.at(1), desired_tcp_pos.at(2));
   KDL::Frame tcp_pos_goal(orientation, vec_tcp_pos_goal);
 
   //Compute inverse kinematics
@@ -218,7 +272,7 @@ void compute_ik(std::vector<double>& offset, std::vector<double>& origin, std::v
 
   //Change the control joint values and finish the function
   for (unsigned int i=0; i<n_joints; i++) {
-    control_joint_vals.at(i) = jnt_pos_goal.data(i);
+    res_vals.at(i) = jnt_pos_goal.data(i);
   }
 
   if (display_time) {

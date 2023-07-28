@@ -55,6 +55,16 @@ public:
   KDL::JntArray joint_pos_start_;
   KDL::Frame task_pos_start_;
 
+  // use moving-average to smoothen the joint values
+  long unsigned int num_smooth = 3;
+  std::vector<double> q1s {};
+  std::vector<double> q2s {};
+  std::vector<double> q3s {};
+  std::vector<double> q4s {};
+  std::vector<double> q5s {};
+  std::vector<double> q6s {};
+  std::vector<double> q7s {};
+
     
   CartesianController()
   : Node("cartesian_controller")
@@ -117,6 +127,87 @@ public:
     // compute task pos start
     fk_solver_.JntToCart(joint_pos_start_, task_pos_start_);
     
+  }
+
+
+  ///////////////////////////////////// JOINT CONTROLLER /////////////////////////////////////
+  void controller_publisher()
+  { 
+    if (control == true) {
+
+      auto message = trajectory_msgs::msg::JointTrajectory();
+      message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
+
+      ///////// compute IK /////////
+      compute_ik(offset, origin, curr_joint_vals, ik_joint_vals);
+      if (count < max_count) count++;  // increase count up to the max_count value
+      
+      ///////// check limits /////////
+      if (!within_limits(ik_joint_vals)) {
+        std::cout << "--------\nThese violate the joint limits of the Panda arm, shutting down now !!!\n---------" << std::endl;
+        rclcpp::shutdown();
+      }
+
+      ///////// perform moving-average smoothing /////////
+      if (q1s.size() < num_smooth) {
+
+        // don't have enough to perform averaging, push_back more values
+        std::cout << "Waiting for the smoothing vector to fill up ... " << std::endl; 
+        q1s.push_back(ik_joint_vals.at(0));
+        q2s.push_back(ik_joint_vals.at(1));
+        q3s.push_back(ik_joint_vals.at(2));
+        q4s.push_back(ik_joint_vals.at(3));
+        q5s.push_back(ik_joint_vals.at(4));
+        q6s.push_back(ik_joint_vals.at(5));
+        q7s.push_back(ik_joint_vals.at(6));
+
+      } else {
+
+        // vector is at capacity, start pop/pushing, and averaging, and publishing
+        std::cout << "Smoothing vector is full! Start popping / pushing, and averaging " << std::endl; 
+        q1s.erase(q1s.begin());
+        q2s.erase(q2s.begin());
+        q3s.erase(q3s.begin());
+        q4s.erase(q4s.begin());
+        q5s.erase(q5s.begin());
+        q6s.erase(q6s.begin());
+        q7s.erase(q7s.begin());
+        q1s.push_back(ik_joint_vals.at(0));
+        q2s.push_back(ik_joint_vals.at(1));
+        q3s.push_back(ik_joint_vals.at(2));
+        q4s.push_back(ik_joint_vals.at(3));
+        q5s.push_back(ik_joint_vals.at(4));
+        q6s.push_back(ik_joint_vals.at(5));
+        q7s.push_back(ik_joint_vals.at(6));
+        control_joint_vals.at(0) = std::accumulate(q1s.begin(), q1s.end(), 0.0) / q1s.size();
+        control_joint_vals.at(1) = std::accumulate(q2s.begin(), q2s.end(), 0.0) / q2s.size();
+        control_joint_vals.at(2) = std::accumulate(q3s.begin(), q3s.end(), 0.0) / q3s.size();
+        control_joint_vals.at(3) = std::accumulate(q4s.begin(), q4s.end(), 0.0) / q4s.size();
+        control_joint_vals.at(4) = std::accumulate(q5s.begin(), q5s.end(), 0.0) / q5s.size();
+        control_joint_vals.at(5) = std::accumulate(q6s.begin(), q6s.end(), 0.0) / q6s.size();
+        control_joint_vals.at(6) = std::accumulate(q7s.begin(), q7s.end(), 0.0) / q7s.size();
+
+        ///////// do the initial smooth transitioning from current position to Falcon-mapped position /////////
+        weight = (double)count / max_count;
+        std::cout << "The current count is " << count << std::endl;
+        std::cout << "The current weight is " << weight << std::endl;
+        for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = weight * control_joint_vals.at(i) + (1-weight) * curr_joint_vals.at(i);
+        
+        ///////// prepare the trajectory message, introducing artificial latency (1.5x) /////////
+        auto point = trajectory_msgs::msg::JointTrajectoryPoint();
+        point.positions = message_joint_vals;
+        point.time_from_start.nanosec = 100 * 1000000;     //// => {milliseconds} * 1e6
+
+        message.points = {point};
+
+        std::cout << "The joint values [MESSAGE] are ";
+        print_joint_vals(message_joint_vals);
+
+        // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
+        controller_pub_->publish(message);
+
+      }
+    }
   }
   
 };
