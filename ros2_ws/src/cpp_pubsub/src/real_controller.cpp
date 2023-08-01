@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/float64.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -65,7 +66,8 @@ class RealController : public rclcpp::Node
 public:
   
   // std::vector<double> origin {0.3059, 0.0, 0.4846}; //////// can change the task-space origin point! ////////
-  std::vector<double> origin {0.4559, 0.0, 0.3346}; //////// can change the task-space origin point! ////////
+  // std::vector<double> origin {0.4559, 0.0, 0.3346}; //////// can change the task-space origin point! ////////
+  std::vector<double> origin {0.4559, 0.0, 0.3846}; //////// can change the task-space origin point! ////////
 
   std::vector<double> human_offset {0.0, 0.0, 0.0};
   std::vector<double> robot_offset {0.0, 0.0, 0.0};
@@ -75,13 +77,13 @@ public:
   std::vector<double> message_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
   
-  const double mapping_ratio = 1.5;    /////// this ratio is {end-effector movement} / {Falcon movement}
+  const double mapping_ratio = 2.0;    /////// this ratio is {end-effector movement} / {Falcon movement}
   const int control_freq = 20;   // the rate at which the "controller_publisher" function is called in [Hz]
   const double latency = 2.0;  // this is the artificial latency introduced into the joint points published
 
   // used to initially smoothly incorporate the Falcon offset
-  // meaning that {max_count = control_frequency * 10} -> corresponds to 10 seconds of "smoothing time"
-  const int max_count = control_freq * 10;
+  const int smoothing_time = 5;   /// smoothing time in [seconds]
+  const int max_count = control_freq * smoothing_time;
   int count = 0;
 
   double w = 0.0;  // this is the weight used for initial smoothing, which goes from 0 -> 1 as count goes from 0 -> max_count
@@ -89,23 +91,35 @@ public:
   // alpha values in {x, y, z} dimensions, used for convex combination of human and robot input
   // alpha values correspond to the share of HUMAN INPUT
   // they have to be in the range of [0, 1]
-  double ax = 1.0;
-  double ay = 1.0;
-  double az = 1.0;
+  double ax = 0.0;
+  double ay = 0.0;
+  double az = 0.0;
+
+  // trajectory recording
+  const int max_points = 200;
+  int num_points = 0;
+  bool record_flag = false;
+
+  // for robot trajectory following
+  double t_param = 0.0;
 
 
   ////////////////////////////////////////////////////////////////////////
   RealController()
   : Node("real_controller")
   { 
-    //Create publisher and subscriber and timer
+    // joint controller publisher & timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
     controller_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::controller_publisher, this));    // controls at 20 Hz 
     ////////////////// NOTE: the controller frequency should be kept quite low (20 Hz seems to be perfect) //////////////////
 
-    //Create publisher and subscriber and timer
+    // tcp position publisher & timer
     tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
-    tcp_pos_timer_ = this->create_wall_timer(5ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 200 Hz
+    // tcp_pos_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 20 Hz
+
+    // recording flag publisher & timer
+    record_flag_pub_ = this->create_publisher<std_msgs::msg::Bool>("record", 10);
+    record_flag_timer_ = this->create_wall_timer(2ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 500 Hz
 
     joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
@@ -126,13 +140,14 @@ private:
   { 
     if (control == true) {
 
-      auto message = trajectory_msgs::msg::JointTrajectory();
-      message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
+      auto traj_message = trajectory_msgs::msg::JointTrajectory();
+      traj_message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
 
       // get the robot control offset in Cartesian space
-      double time = (double) count / control_freq;
-      get_robot_control(time, robot_offset);
+      t_param = (double) (count - max_count) / max_points * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
+      get_robot_control(t_param, robot_offset);
+
 
       // perform the convex combination of robot and human offsets
       // also adding the origin and thus representing it as tcp_pos in the robot's base frame
@@ -144,8 +159,8 @@ private:
       compute_ik(tcp_pos, curr_joint_vals, ik_joint_vals);
 
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
-      if (count < max_count) count++;  // increase count up to the max_count value
-      w = (double)count / max_count;
+      count++;  // increase count
+      if (count <= max_count) w = pow((double)count / max_count, 2.0);  // use quadratic increase to make it smoother
       std::cout << "The current count is " << count << std::endl;
       std::cout << "The current weight is " << w << std::endl;
       for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);
@@ -155,27 +170,51 @@ private:
         std::cout << "--------\nThese violate the joint limits of the Panda arm, shutting down now !!!\n---------" << std::endl;
         rclcpp::shutdown();
       }
+
       
       ///////// prepare the trajectory message, introducing artificial latency /////////
       auto point = trajectory_msgs::msg::JointTrajectoryPoint();
       point.positions = message_joint_vals;
       point.time_from_start.nanosec = (int)(1000 / control_freq) * latency * 1000000;     //// => {milliseconds} * 1e6
 
-      message.points = {point};
+      traj_message.points = {point};
 
       std::cout << "The joint values [MESSAGE] are ";
       print_joint_vals(message_joint_vals);
+      controller_pub_->publish(traj_message);
+
+
+      //////////////////////// NOW PUBLISH THE TCP_POS ////////////////////////
+      // note: this is in meters
+      auto tcp_message = tutorial_interfaces::msg::Falconpos();
+      tcp_message.x = tcp_pos.at(0);
+      tcp_message.y = tcp_pos.at(1);
+      tcp_message.z = tcp_pos.at(2);
 
       // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
-      controller_pub_->publish(message);
+      tcp_pos_pub_->publish(tcp_message);
 
-      
+
+      // set the record flag as either true or false, depending on the number of trajectory points executed
+      if (count == max_count && !record_flag && num_points == 0) {
+        record_flag = true;
+        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => TRUE =======================\n\n\n\n\n\n" << std::endl;
+      }
+      if (record_flag) {
+        if (num_points < max_points) {
+          num_points++;
+        } else {
+        record_flag = false;
+        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
+        }
+      }
     }
   }
 
   ///////////////////////////////////// TCP POSITION PUBLISHER /////////////////////////////////////
   void tcp_pos_publisher()
   { 
+    // note: this is in meters
     auto message = tutorial_interfaces::msg::Falconpos();
     message.x = tcp_pos.at(0);
     message.y = tcp_pos.at(1);
@@ -183,6 +222,16 @@ private:
 
     // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
     tcp_pos_pub_->publish(message);
+  }
+
+  ///////////////////////////////////// TRAJ RECORD FLAG PUBLISHER /////////////////////////////////////
+  void record_flag_publisher()
+  { 
+    auto message = std_msgs::msg::Bool();
+    message.data = record_flag;
+
+    // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
+    record_flag_pub_->publish(message);
   }
 
   ///////////////////////////////////// JOINT STATES SUBSCRIBER /////////////////////////////////////
@@ -214,6 +263,9 @@ private:
   rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr tcp_pos_pub_;
   rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
 
+  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr record_flag_pub_;
+  rclcpp::TimerBase::SharedPtr record_flag_timer_;
+
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_vals_sub_;
 
   rclcpp::Subscription<tutorial_interfaces::msg::Falconpos>::SharedPtr falcon_pos_sub_;
@@ -226,10 +278,22 @@ private:
 
 void get_robot_control(double t, std::vector<double>& vals) {
 
-  // compute the coordinates of the time-parametrized trajectory (in Cartesian space)
+  // circle of radius 0.1m, parametrized in the range [0, 2pi]
+  double r = 0.1;
 
-  for (unsigned int i=0; i<n_joints; i++) {
-    vals.at(i) = t;
+  double x = 0.0;
+  double y = r * sin(t);
+  double z = r * cos(t);
+
+  vals.at(0) = x;
+  vals.at(1) = y;
+  vals.at(2) = z;
+
+  // if recording hasn't started, move the robot to the desired starting position of the circle
+  if (t < 0.0 || t > 2*M_PI) {
+    vals.at(0) = 0.00;
+    vals.at(1) = 0.00;
+    vals.at(2) = r;
   }
 
 }

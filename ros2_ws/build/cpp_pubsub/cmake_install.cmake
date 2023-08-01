@@ -191,6 +191,7 @@ if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_
     "/home/michael/HRI/ros2_ws/src/cpp_pubsub/scripts/basic_subscriber.py"
     "/home/michael/HRI/ros2_ws/src/cpp_pubsub/scripts/joint_controller.py"
     "/home/michael/HRI/ros2_ws/src/cpp_pubsub/scripts/gazebo_controller.py"
+    "/home/michael/HRI/ros2_ws/src/cpp_pubsub/scripts/traj_recorder.py"
     )
 endif()
 

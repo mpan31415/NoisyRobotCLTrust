@@ -57,17 +57,26 @@ def generate_launch_description():
 
         ############################## THE FOLLOWING ARE MY OWN NODES ##############################
 
+        # joint trajectory controller
         Node(
             package='controller_manager',
             executable='spawner',
             arguments=['joint_trajectory_controller'],
             output='screen',
-            ),
+        ),
 
+        # active Falcon interface
         Node(
             package='cpp_pubsub',
             executable='position_talker',
             name='position_talker'
+        ),
+
+        # trajectory recorder node
+        Node(
+            package='cpp_pubsub',
+            executable='traj_recorder.py',
+            name='traj_recorder'
         )
 
         # Node(

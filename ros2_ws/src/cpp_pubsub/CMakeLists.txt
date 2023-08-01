@@ -87,6 +87,7 @@ install(PROGRAMS
   scripts/basic_subscriber.py
   scripts/joint_controller.py
   scripts/gazebo_controller.py
+  scripts/traj_recorder.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

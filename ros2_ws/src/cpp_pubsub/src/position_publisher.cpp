@@ -24,24 +24,24 @@ public:
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
-  double K = 200.0;     //////////////////// -> this is the initial gain value K, will be changed after a few seconds!
-  double C = 5.0;      //////////// -> having this higher will cause vibrations
+  double K[3] {100.0, 100.0, 500.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
+  double C[3] {5.0, 5.0, 5.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
   int choice;
+
+  ///////// -> this is the centering Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
+  ///////// -> max bounds are around +-0.05m (5cm)
+  double centering[3] {0.00, 0.00, 0.05};   ///////// -> note: this is in [meters]
+  // guide:
+  // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
+  // positive axes directions are {out, right, up}
+
 
   PositionPublisher(int a_choice)
   : Node("position_publisher")
   { 
     choice = a_choice;
-    publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
 
-    // if (choice == 0) {
-    //   timer_ = this->create_wall_timer(
-    //   1ms, std::bind(&PositionPublisher::free_timer_callback, this));
-    // } else {
-    //   timer_ = this->create_wall_timer(
-    //   1ms, std::bind(&PositionPublisher::constrained_timer_callback, this));
-    // }
-    
+    publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
     timer_ = this->create_wall_timer(
       1ms, std::bind(&PositionPublisher::timer_callback, this)); ///////// publishing at 1000 Hz /////////
   }
@@ -57,13 +57,13 @@ private:
 
     if (count < count_thres2) {
       // gradually perform centering {in increasing levels of K = 1000 -> K = 2000, after 1 -> 2 seconds}
-      for (int i=0; i<3; i++) f[i] = - K * p[i] - C * v[i];
+      for (int i=0; i<3; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i];
     } else {
       switch (choice) {
         case 0: for (int i=0; i<3; i++) f[i] = 0; break;
-        case 1: for (int i=0; i<1; i++) f[i] = - K * p[i] - C * v[i]; break;
-        case 2: for (int i=0; i<2; i++) f[i] = - K * p[i] - C * v[i]; break;
-        case 3: for (int i=0; i<3; i++) f[i] = - K * p[i] - C * v[i]; break;
+        case 1: for (int i=0; i<1; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i]; break;
+        case 2: for (int i=0; i<2; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i]; break;
+        case 3: for (int i=0; i<3; i++) f[i] = - K[i] * (p[i] - centering[i]) - C[i] * v[i]; break;
       }
     }
 
@@ -106,14 +106,20 @@ private:
         count = 0;
         reset_count = 0;
         reset = false;
-        K = 100.0;
-        C = 5.0;
+
+        // restore the K and C gain vectors to initial values
+        K[0] = 100.0; K[1] = 100.0; K[2] = 500.0;
+        C[0] = 5.0;   C[1] = 5.0;   C[2] = 5.0;
       }
     }
 
     count++;
-    if (count > count_thres1) K = 1000.0;
-    if (count > count_thres2) K = 2000.0;
+    if (count > count_thres1) {
+      K[0] = 1000.0; K[1] = 1000.0; K[2] = 1000.0;
+    }
+    if (count > count_thres2) {
+      K[0] = 2000.0; K[1] = 2000.0; K[2] = 2000.0;
+    }
 
   }
 
@@ -130,8 +136,6 @@ private:
   bool reset = false;
 
 };
-
-
 
 
 
@@ -170,7 +174,11 @@ int main(int argc, char * argv[])
 
   ///////////////// CHOOSE YOUR MODE! /////////////////
 
-  int choice = 0;
+  // guide:
+  // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
+  // positive axes directions are {out, right, up}
+
+  int choice = 1;
 
   ///////////////// CHOOSE YOUR MODE! /////////////////
 
