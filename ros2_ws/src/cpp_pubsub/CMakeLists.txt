@@ -59,8 +59,8 @@ target_link_libraries(position_talker /usr/local/lib/libdhd.so.3
                                       # /usr/local/lib/libdrd.so.3.15.0
 )
 
-add_executable(cartesian_controller src/cartesian_controller.cpp)
-ament_target_dependencies(cartesian_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
+add_executable(gazebo_controller src/gazebo_controller.cpp)
+ament_target_dependencies(gazebo_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
 
 add_executable(real_controller src/real_controller.cpp)
 ament_target_dependencies(real_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
@@ -70,7 +70,7 @@ install(TARGETS
   listener
   encoder_talker
   position_talker
-  cartesian_controller
+  gazebo_controller
   real_controller
   DESTINATION lib/${PROJECT_NAME})
 

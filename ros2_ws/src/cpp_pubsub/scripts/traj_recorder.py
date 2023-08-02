@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import sin, cos
 
+import os
+
 import rclpy
 from rclpy.node import Node
 
@@ -17,6 +19,10 @@ ORIGIN = [0.4559, 0.0, 0.3846]   # this is in [meters]
 MAPPING_RATIO = 2.0
 
 NUM_POINTS = 200
+
+SCRIPTS_DIR = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/scripts"
+
+FILE_NAME = "control00"
 
 
 
@@ -79,7 +85,12 @@ class TrajectoryRecorder(Node):
         self.plot_circle_reference()
         self.ax.legend()
 
+        # saving the figure before I show it (is required)
+        plt.savefig(SCRIPTS_DIR + "/traj_plots/" + FILE_NAME + ".png")
+
         plt.show()
+
+        
     
 
     ##############################################################################

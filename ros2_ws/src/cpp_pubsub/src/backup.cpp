@@ -1,10 +1,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/float64.hpp"
-// #include "control_msgs/msg/joint_controller_state.hpp"
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+
+#include "tutorial_interfaces/msg/falconpos.hpp"
 
 #include <chrono>
 #include <functional>
@@ -23,12 +24,36 @@
 #include <kdl/jntarray.hpp>
 
 
-/////// COMMENT OUT FOR NOW ///////
-// #include <ros/package.h>
-
-
 using namespace std::chrono_literals;
-using std::placeholders::_1;
+
+
+/////////////////// global variables ///////////////////
+const std::string urdf_path = "/home/michael/FOR_TESTING/panda.urdf";
+const unsigned int n_joints = 7;
+
+const std::vector<double> lower_joint_limits {-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973};
+const std::vector<double> upper_joint_limits {2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973};
+
+const bool display_time = true;
+
+KDL::Tree panda_tree;
+KDL::Chain panda_chain;
+
+KDL::Rotation orientation;
+bool got_orientation = false;
+
+std::vector<double> tcp_pos {0.3069, 0.0, 0.4853};   // initialized the same as the "home" position
+
+
+/////////////////// function declarations ///////////////////
+void compute_ik(std::vector<double>& p, std::vector<double>& origin, std::vector<double>& curr_joint_vals, std::vector<double>& control_joint_vals);
+
+bool within_limits(std::vector<double>& vals);
+bool create_tree();
+void get_chain();
+
+void print_joint_vals(std::vector<double>& joint_vals);
+
 
 
 /////////////// DEFINITION OF NODE CLASS //////////////
@@ -36,100 +61,41 @@ using std::placeholders::_1;
 class CartesianController : public rclcpp::Node
 {
 public:
+  
+  std::vector<double> offset_pos {0.0, 0.0, 0.0};
+  std::vector<double> origin {0.3069, 0.0, 0.4853}; //////// can change the task-space origin point! ////////
 
-  const std::string urdf_path_ = "/home/michael/FOR_TESTING/panda.urdf";
-  const unsigned int n_joints_ = 7;
+  std::vector<double> curr_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  std::vector<double> control_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  bool control = false;
+  
+  const int mapping_ratio = 7;    /////// this ratio is {end-effector movement} / {Falcon movement}
 
-  rclcpp::TimerBase::SharedPtr timer_;
-  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr publisher_;
-  rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_;
-
-  KDL::Tree panda_tree_;
-  KDL::Chain panda_chain_;
-
-  //Create solvers
-  // KDL::ChainFkSolverPos_recursive fk_solver_;
-  KDL::ChainIkSolverVel_pinv vel_ik_solver_;
-  KDL::ChainIkSolverPos_NR ik_solver_;
-
-  KDL::JntArray joint_pos_start_;
-  KDL::Frame task_pos_start_;
-
-  // use moving-average to smoothen the joint values
-  long unsigned int num_smooth = 3;
-  std::vector<double> q1s {};
-  std::vector<double> q2s {};
-  std::vector<double> q3s {};
-  std::vector<double> q4s {};
-  std::vector<double> q5s {};
-  std::vector<double> q6s {};
-  std::vector<double> q7s {};
-
-    
   CartesianController()
   : Node("cartesian_controller")
   { 
     //Create publisher and subscriber and timer
-    publisher_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
-    timer_ = this->create_wall_timer(1ms, std::bind(&CartesianController::controller_callback, this));
+    controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
+    controller_timer_ = this->create_wall_timer(5ms, std::bind(&CartesianController::controller_publisher, this));    // controls at 200 Hz
 
-    subscription_ = this->create_subscription<std_msgs::msg::String>(
-      "joint_states", 10, std::bind(&CartesianController::joint_states_callback, this, _1));
-    
-    //Parse urdf model and generate KDL tree
-    if (!kdl_parser::treeFromFile(urdf_path_, panda_tree_)){
-      // RCLCPP_ERROR_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Failed to construct kdl tree");
-      rclcpp::shutdown();
-    }
+    //Create publisher and subscriber and timer
+    tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
+    tcp_pos_timer_ = this->create_wall_timer(5ms, std::bind(&CartesianController::tcp_pos_publisher, this));    // publishes at 200 Hz
 
-    //Generate a kinematic chain from the robot base to its tcp
-    panda_tree_.getChain("panda_link0", "panda_grasptarget", panda_chain_);
+    joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
+      "joint_states", 10, std::bind(&CartesianController::joint_states_callback, this, std::placeholders::_1));
 
-    //Create solvers
-    // KDL::ChainFkSolverPos_recursive fk_solver_(panda_chain_);
-    // KDL::ChainIkSolverVel_pinv vel_ik_solver(panda_chain_, 0.0001, 1000);
-    // KDL::ChainIkSolverPos_NR ik_solver(panda_chain_, fk_solver_, vel_ik_solver, 1000);
+    falcon_pos_sub_ = this->create_subscription<tutorial_interfaces::msg::Falconpos>(
+      "falcon_position", 10, std::bind(&CartesianController::falcon_pos_callback, this, std::placeholders::_1));
 
-    //Create data structures
-    joint_pos_start_ = KDL::JntArray(n_joints_);
-    task_pos_start_ = KDL::Frame();
+    //Create Panda tree and get its kinematic chain
+    if (!create_tree()) rclcpp::shutdown();
+    get_chain();
 
   }
 
-  void controller_callback()
-  { 
-    auto message = trajectory_msgs::msg::JointTrajectory();
-    message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
-
-    ///////// compute IK
-    double joint_results[7] {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    
-    auto point = trajectory_msgs::msg::JointTrajectoryPoint();
-    point.positions = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-    message.points = {point};
-
-    RCLCPP_INFO(this->get_logger(), "Publishing joint values: %s", message.points[0]);
-    publisher_->publish(message);
-
-  }
-
-  void joint_states_callback(const sensor_msgs::msg::JointState & msg) const
-  { 
-    auto data = msg.position;
-    RCLCPP_INFO(this->get_logger(), "I heard joint values of '%s' from Gazebo!", data);
-
-    // // compute joint pos start
-    // for (unsigned int i=0; i<n_joints_; i++) {
-    //   joint_pos_start_.data(i, 0) = data.at(i);
-    // }
-
-    // compute task pos start
-    fk_solver_.JntToCart(joint_pos_start_, task_pos_start_);
-    
-  }
-
-
+private:
+  
   ///////////////////////////////////// JOINT CONTROLLER /////////////////////////////////////
   void controller_publisher()
   { 
@@ -139,183 +105,163 @@ public:
       message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
       ///////// compute IK /////////
-      compute_ik(offset, origin, curr_joint_vals, ik_joint_vals);
-      if (count < max_count) count++;  // increase count up to the max_count value
-      
-      ///////// check limits /////////
-      if (!within_limits(ik_joint_vals)) {
+      compute_ik(offset_pos, origin, curr_joint_vals, control_joint_vals);
+
+      std::cout << "The new joint values [control] are ";
+      print_joint_vals(control_joint_vals);
+
+      if (!within_limits(control_joint_vals)) {
         std::cout << "--------\nThese violate the joint limits of the Panda arm, shutting down now !!!\n---------" << std::endl;
         rclcpp::shutdown();
       }
+      
+      auto point = trajectory_msgs::msg::JointTrajectoryPoint();
+      point.positions = control_joint_vals;
+      // point.time_from_start.nanosec = 100000;     //// matching the publishing frequency
 
-      ///////// perform moving-average smoothing /////////
-      if (q1s.size() < num_smooth) {
+      message.points = {point};
 
-        // don't have enough to perform averaging, push_back more values
-        std::cout << "Waiting for the smoothing vector to fill up ... " << std::endl; 
-        q1s.push_back(ik_joint_vals.at(0));
-        q2s.push_back(ik_joint_vals.at(1));
-        q3s.push_back(ik_joint_vals.at(2));
-        q4s.push_back(ik_joint_vals.at(3));
-        q5s.push_back(ik_joint_vals.at(4));
-        q6s.push_back(ik_joint_vals.at(5));
-        q7s.push_back(ik_joint_vals.at(6));
-
-      } else {
-
-        // vector is at capacity, start pop/pushing, and averaging, and publishing
-        std::cout << "Smoothing vector is full! Start popping / pushing, and averaging " << std::endl; 
-        q1s.erase(q1s.begin());
-        q2s.erase(q2s.begin());
-        q3s.erase(q3s.begin());
-        q4s.erase(q4s.begin());
-        q5s.erase(q5s.begin());
-        q6s.erase(q6s.begin());
-        q7s.erase(q7s.begin());
-        q1s.push_back(ik_joint_vals.at(0));
-        q2s.push_back(ik_joint_vals.at(1));
-        q3s.push_back(ik_joint_vals.at(2));
-        q4s.push_back(ik_joint_vals.at(3));
-        q5s.push_back(ik_joint_vals.at(4));
-        q6s.push_back(ik_joint_vals.at(5));
-        q7s.push_back(ik_joint_vals.at(6));
-        control_joint_vals.at(0) = std::accumulate(q1s.begin(), q1s.end(), 0.0) / q1s.size();
-        control_joint_vals.at(1) = std::accumulate(q2s.begin(), q2s.end(), 0.0) / q2s.size();
-        control_joint_vals.at(2) = std::accumulate(q3s.begin(), q3s.end(), 0.0) / q3s.size();
-        control_joint_vals.at(3) = std::accumulate(q4s.begin(), q4s.end(), 0.0) / q4s.size();
-        control_joint_vals.at(4) = std::accumulate(q5s.begin(), q5s.end(), 0.0) / q5s.size();
-        control_joint_vals.at(5) = std::accumulate(q6s.begin(), q6s.end(), 0.0) / q6s.size();
-        control_joint_vals.at(6) = std::accumulate(q7s.begin(), q7s.end(), 0.0) / q7s.size();
-
-        ///////// do the initial smooth transitioning from current position to Falcon-mapped position /////////
-        weight = (double)count / max_count;
-        std::cout << "The current count is " << count << std::endl;
-        std::cout << "The current weight is " << weight << std::endl;
-        for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = weight * control_joint_vals.at(i) + (1-weight) * curr_joint_vals.at(i);
-        
-        ///////// prepare the trajectory message, introducing artificial latency (1.5x) /////////
-        auto point = trajectory_msgs::msg::JointTrajectoryPoint();
-        point.positions = message_joint_vals;
-        point.time_from_start.nanosec = 100 * 1000000;     //// => {milliseconds} * 1e6
-
-        message.points = {point};
-
-        std::cout << "The joint values [MESSAGE] are ";
-        print_joint_vals(message_joint_vals);
-
-        // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
-        controller_pub_->publish(message);
-
-      }
+      // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
+      controller_pub_->publish(message);
     }
   }
+
+  ///////////////////////////////////// TCP POSITION PUBLISHER /////////////////////////////////////
+  void tcp_pos_publisher()
+  { 
+    auto message = tutorial_interfaces::msg::Falconpos();
+    message.x = tcp_pos.at(0);
+    message.y = tcp_pos.at(1);
+    message.z = tcp_pos.at(2);
+
+    // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
+    tcp_pos_pub_->publish(message);
+  }
+
+  ///////////////////////////////////// JOINT STATES SUBSCRIBER /////////////////////////////////////
+  void joint_states_callback(const sensor_msgs::msg::JointState & msg)
+  { 
+    auto data = msg.position;
+
+    // write into our class variable for storing joint values
+    curr_joint_vals.at(0) = data.at(0);
+    curr_joint_vals.at(1) = data.at(1);
+    curr_joint_vals.at(2) = data.at(7);
+    curr_joint_vals.at(3) = data.at(2);
+    curr_joint_vals.at(4) = data.at(3);
+    curr_joint_vals.at(5) = data.at(4);
+    curr_joint_vals.at(6) = data.at(5);
+
+    // std::cout << "The current joint values [Gazebo] are ";
+    // print_joint_vals(curr_joint_vals);
+
+    /// if this the first iteration, change the control flag and start partying!
+    if (control == false) control = true;
+  }
+
+  ///////////////////////////////////// FALCON SUBSCRIBER /////////////////////////////////////
+  void falcon_pos_callback(const tutorial_interfaces::msg::Falconpos & msg)
+  { 
+    offset_pos.at(0) = msg.x / 100 * mapping_ratio;
+    offset_pos.at(1) = msg.y / 100 * mapping_ratio;
+    offset_pos.at(2) = msg.z / 100 * mapping_ratio;
+  }
+
+  rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr controller_pub_;
+  rclcpp::TimerBase::SharedPtr controller_timer_;
+
+  rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr tcp_pos_pub_;
+  rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
+
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_vals_sub_;
+
+  rclcpp::Subscription<tutorial_interfaces::msg::Falconpos>::SharedPtr falcon_pos_sub_;
   
 };
 
 
 
+/////////////////////////////// my own ik function ///////////////////////////////
 
+void compute_ik(std::vector<double>& offset, std::vector<double>& origin, std::vector<double>& curr_joint_vals, std::vector<double>& control_joint_vals) {
 
-
-void solve_ik() {
-
-  std::string urdf_path = ros::package::getPath("ur5-joint-position-control");
-	if(urdf_path.empty()) {
-		ROS_ERROR("ur5-joint-position-control package path was not found");
-	}
-	urdf_path += "/urdf/ur5_jnt_pos_ctrl.urdf";
-	ros::init(argc, argv, "tcp_control");
-
-	ros::NodeHandle n;
-
-	ros::Rate loop_rate(loop_rate_val);
-
-	//Create subscribers for all joint states
-	ros::Subscriber shoulder_pan_joint_sub = n.subscribe("/shoulder_pan_joint_position_controller/state", 1000, get_shoulder_pan_joint_position);
-	ros::Subscriber shoulder_lift_joint_sub = n.subscribe("/shoulder_lift_joint_position_controller/state", 1000, get_shoulder_lift_joint_position);
-	ros::Subscriber elbow_joint_sub = n.subscribe("/elbow_joint_position_controller/state", 1000, get_elbow_joint_position);
-	ros::Subscriber wrist_1_joint_sub = n.subscribe("/wrist_1_joint_position_controller/state", 1000, get_wrist_1_joint_position);
-	ros::Subscriber wrist_2_joint_sub = n.subscribe("/wrist_2_joint_position_controller/state", 1000, get_wrist_2_joint_position);
-	ros::Subscriber wrist_3_joint_sub = n.subscribe("/wrist_3_joint_position_controller/state", 1000, get_wrist_3_joint_position);
-
-	//Create publishers to send position commands to all joints
-	ros::Publisher joint_com_pub[6]; 
-	joint_com_pub[0] = n.advertise<std_msgs::Float64>("/shoulder_pan_joint_position_controller/command", 1000);
-	joint_com_pub[1] = n.advertise<std_msgs::Float64>("/shoulder_lift_joint_position_controller/command", 1000);
-	joint_com_pub[2] = n.advertise<std_msgs::Float64>("/elbow_joint_position_controller/command", 1000);
-	joint_com_pub[3] = n.advertise<std_msgs::Float64>("/wrist_1_joint_position_controller/command", 1000);
-	joint_com_pub[4] = n.advertise<std_msgs::Float64>("/wrist_2_joint_position_controller/command", 1000);
-	joint_com_pub[5] = n.advertise<std_msgs::Float64>("/wrist_3_joint_position_controller/command", 1000);
-
-	//Parse urdf model and generate KDL tree
-	KDL::Tree ur5_tree;
-	if (!kdl_parser::treeFromFile(urdf_path, ur5_tree)){
-		ROS_ERROR("Failed to construct kdl tree");
-   		return false;
-	}
-
-	//Generate a kinematic chain from the robot base to its tcp
-	KDL::Chain ur5_chain;
-	ur5_tree.getChain("base_link", "wrist_3_link", ur5_chain);
+  auto start = std::chrono::high_resolution_clock::now();
 
 	//Create solvers
-	KDL::ChainFkSolverPos_recursive fk_solver(ur5_chain);
-	KDL::ChainIkSolverVel_pinv vel_ik_solver(ur5_chain, 0.0001, 1000);
-	KDL::ChainIkSolverPos_NR ik_solver(ur5_chain, fk_solver, vel_ik_solver, 1000);
+	KDL::ChainFkSolverPos_recursive fk_solver(panda_chain);
+	KDL::ChainIkSolverVel_pinv vel_ik_solver(panda_chain, 0.0001, 1000);
+	KDL::ChainIkSolverPos_NR ik_solver(panda_chain, fk_solver, vel_ik_solver, 1000);
 
-	//Make sure we have received proper joint angles already
-	for(int i=0; i< 2; i++) {
-		ros::spinOnce();
-	 	loop_rate.sleep();
-	}
+  //Create the KDL array of current joint values
+  KDL::JntArray jnt_pos_start(n_joints);
+  for (unsigned int i=0; i<n_joints; i++) {
+    jnt_pos_start(i) = curr_joint_vals.at(i);
+  }
 
-	const float t_step = 1/((float)loop_rate_val);
-	int count = 0;
-	while (ros::ok()) {
+  //Write in the initial orientation if not already done so
+  if (!got_orientation) {
+    //Compute current tcp position
+    KDL::Frame tcp_pos_start;
+    fk_solver.JntToCart(jnt_pos_start, tcp_pos_start);
+    orientation = tcp_pos_start.M;
+    got_orientation = true;
+  }
 
-		//Compute current tcp position
-		KDL::Frame tcp_pos_start;
-		fk_solver.JntToCart(jnt_pos_start, tcp_pos_start);
+  for (unsigned int i=0; i<3; i++) {
+    tcp_pos.at(i) = origin.at(i) + offset.at(i);
+  }
 
-		ROS_INFO("Current tcp Position/Twist KDL:");		
-		ROS_INFO("Position: %f %f %f", tcp_pos_start.p(0), tcp_pos_start.p(1), tcp_pos_start.p(2));		
-		ROS_INFO("Orientation: %f %f %f", tcp_pos_start.M(0,0), tcp_pos_start.M(1,0), tcp_pos_start.M(2,0));
+  //Create the task-space goal object
+  KDL::Vector vec_tcp_pos_goal(offset.at(0) + origin.at(0), offset.at(1) + origin.at(1), offset.at(2) + origin.at(2));
+  KDL::Frame tcp_pos_goal(orientation, vec_tcp_pos_goal);
 
-		//get user input
-		float t_max;
-		KDL::Vector vec_tcp_pos_goal(0.0, 0.0, 0.0);
-		get_goal_tcp_and_time(tcp_pos_start, &vec_tcp_pos_goal, &t_max);
+  //Compute inverse kinematics
+  KDL::JntArray jnt_pos_goal(n_joints);
+  ik_solver.CartToJnt(jnt_pos_start, tcp_pos_goal, jnt_pos_goal);
 
-		KDL::Frame tcp_pos_goal(tcp_pos_start.M, vec_tcp_pos_goal);
+  //Change the control joint values and finish the function
+  for (unsigned int i=0; i<n_joints; i++) {
+    control_joint_vals.at(i) = jnt_pos_goal.data(i);
+  }
 
-		//Compute inverse kinematics
-		KDL::JntArray jnt_pos_goal(Joints);
-		ik_solver.CartToJnt(jnt_pos_start, tcp_pos_goal, jnt_pos_goal);
-
-		float t = 0.0;
-		while(t<t_max) {
-			std_msgs::Float64 position[6];
-			//Compute next position step for all joints
-			for(int i=0; i<Joints; i++) {
-				position[i].data = compute_linear(jnt_pos_start(i), jnt_pos_goal(i), t, t_max);
-				joint_com_pub[i].publish(position[i]);
-			}
-
-			ros::spinOnce();
-			loop_rate.sleep();
-			++count;
-			t += t_step;	
-		}		
-	}	
-
-
-  return 0;
-
+  if (display_time) {
+    auto finish = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(finish - start);
+    std::cout << "Execution of my IK solver function took " << duration.count() << " [microseconds]" << std::endl;
+  }
+  
 }
 
 
+///////////////// other helper functions /////////////////
 
+bool within_limits(std::vector<double>& vals) {
+  for (unsigned int i=0; i<n_joints; i++) {
+    if (vals.at(i) > upper_joint_limits.at(i) || vals.at(i) < lower_joint_limits.at(i)) return false;
+  }
+  return true;
+}
 
+bool create_tree() {
+  if (!kdl_parser::treeFromFile(urdf_path, panda_tree)){
+		std::cout << "Failed to construct kdl tree" << std::endl;
+   	return false;
+  }
+  return true;
+}
+
+void get_chain() {
+  panda_tree.getChain("panda_link0", "panda_grasptarget", panda_chain);
+}
+
+void print_joint_vals(std::vector<double>& joint_vals) {
+  
+  std::cout << "[ ";
+  for (unsigned int i=0; i<joint_vals.size(); i++) {
+    std::cout << joint_vals.at(i) << ' ';
+  }
+  std::cout << "]" << std::endl;
+}
 
 
 

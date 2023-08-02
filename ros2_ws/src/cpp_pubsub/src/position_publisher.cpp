@@ -178,7 +178,7 @@ int main(int argc, char * argv[])
   // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
   // positive axes directions are {out, right, up}
 
-  int choice = 1;
+  int choice = 0;
 
   ///////////////// CHOOSE YOUR MODE! /////////////////
 

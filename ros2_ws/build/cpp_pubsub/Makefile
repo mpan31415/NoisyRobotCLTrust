@@ -250,17 +250,17 @@ position_talker/fast:
 .PHONY : position_talker/fast
 
 #=============================================================================
-# Target rules for targets named cartesian_controller
+# Target rules for targets named gazebo_controller
 
 # Build rule for target.
-cartesian_controller: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cartesian_controller
-.PHONY : cartesian_controller
+gazebo_controller: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gazebo_controller
+.PHONY : gazebo_controller
 
 # fast build rule for target.
-cartesian_controller/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cartesian_controller.dir/build.make CMakeFiles/cartesian_controller.dir/build
-.PHONY : cartesian_controller/fast
+gazebo_controller/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gazebo_controller.dir/build.make CMakeFiles/gazebo_controller.dir/build
+.PHONY : gazebo_controller/fast
 
 #=============================================================================
 # Target rules for targets named real_controller
@@ -301,30 +301,6 @@ ament_cmake_python_build_cpp_pubsub_egg/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ament_cmake_python_build_cpp_pubsub_egg.dir/build.make CMakeFiles/ament_cmake_python_build_cpp_pubsub_egg.dir/build
 .PHONY : ament_cmake_python_build_cpp_pubsub_egg/fast
 
-src/cartesian_controller.o: src/cartesian_controller.cpp.o
-.PHONY : src/cartesian_controller.o
-
-# target to build an object file
-src/cartesian_controller.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cartesian_controller.dir/build.make CMakeFiles/cartesian_controller.dir/src/cartesian_controller.cpp.o
-.PHONY : src/cartesian_controller.cpp.o
-
-src/cartesian_controller.i: src/cartesian_controller.cpp.i
-.PHONY : src/cartesian_controller.i
-
-# target to preprocess a source file
-src/cartesian_controller.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cartesian_controller.dir/build.make CMakeFiles/cartesian_controller.dir/src/cartesian_controller.cpp.i
-.PHONY : src/cartesian_controller.cpp.i
-
-src/cartesian_controller.s: src/cartesian_controller.cpp.s
-.PHONY : src/cartesian_controller.s
-
-# target to generate assembly for a file
-src/cartesian_controller.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cartesian_controller.dir/build.make CMakeFiles/cartesian_controller.dir/src/cartesian_controller.cpp.s
-.PHONY : src/cartesian_controller.cpp.s
-
 src/encoder_publisher.o: src/encoder_publisher.cpp.o
 .PHONY : src/encoder_publisher.o
 
@@ -348,6 +324,30 @@ src/encoder_publisher.s: src/encoder_publisher.cpp.s
 src/encoder_publisher.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_talker.dir/build.make CMakeFiles/encoder_talker.dir/src/encoder_publisher.cpp.s
 .PHONY : src/encoder_publisher.cpp.s
+
+src/gazebo_controller.o: src/gazebo_controller.cpp.o
+.PHONY : src/gazebo_controller.o
+
+# target to build an object file
+src/gazebo_controller.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gazebo_controller.dir/build.make CMakeFiles/gazebo_controller.dir/src/gazebo_controller.cpp.o
+.PHONY : src/gazebo_controller.cpp.o
+
+src/gazebo_controller.i: src/gazebo_controller.cpp.i
+.PHONY : src/gazebo_controller.i
+
+# target to preprocess a source file
+src/gazebo_controller.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gazebo_controller.dir/build.make CMakeFiles/gazebo_controller.dir/src/gazebo_controller.cpp.i
+.PHONY : src/gazebo_controller.cpp.i
+
+src/gazebo_controller.s: src/gazebo_controller.cpp.s
+.PHONY : src/gazebo_controller.s
+
+# target to generate assembly for a file
+src/gazebo_controller.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/gazebo_controller.dir/build.make CMakeFiles/gazebo_controller.dir/src/gazebo_controller.cpp.s
+.PHONY : src/gazebo_controller.cpp.s
 
 src/position_publisher.o: src/position_publisher.cpp.o
 .PHONY : src/position_publisher.o
@@ -462,18 +462,18 @@ help:
 	@echo "... ament_cmake_python_copy_cpp_pubsub"
 	@echo "... cpp_pubsub_uninstall"
 	@echo "... uninstall"
-	@echo "... cartesian_controller"
 	@echo "... encoder_talker"
+	@echo "... gazebo_controller"
 	@echo "... listener"
 	@echo "... position_talker"
 	@echo "... real_controller"
 	@echo "... talker"
-	@echo "... src/cartesian_controller.o"
-	@echo "... src/cartesian_controller.i"
-	@echo "... src/cartesian_controller.s"
 	@echo "... src/encoder_publisher.o"
 	@echo "... src/encoder_publisher.i"
 	@echo "... src/encoder_publisher.s"
+	@echo "... src/gazebo_controller.o"
+	@echo "... src/gazebo_controller.i"
+	@echo "... src/gazebo_controller.s"
 	@echo "... src/position_publisher.o"
 	@echo "... src/position_publisher.i"
 	@echo "... src/position_publisher.s"
