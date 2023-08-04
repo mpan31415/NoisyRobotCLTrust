@@ -276,6 +276,32 @@ real_controller/fast:
 .PHONY : real_controller/fast
 
 #=============================================================================
+# Target rules for targets named points_and_lines
+
+# Build rule for target.
+points_and_lines: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 points_and_lines
+.PHONY : points_and_lines
+
+# fast build rule for target.
+points_and_lines/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/build
+.PHONY : points_and_lines/fast
+
+#=============================================================================
+# Target rules for targets named marker_publisher
+
+# Build rule for target.
+marker_publisher: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 marker_publisher
+.PHONY : marker_publisher
+
+# fast build rule for target.
+marker_publisher/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/marker_publisher.dir/build.make CMakeFiles/marker_publisher.dir/build
+.PHONY : marker_publisher/fast
+
+#=============================================================================
 # Target rules for targets named ament_cmake_python_copy_cpp_pubsub
 
 # Build rule for target.
@@ -348,6 +374,54 @@ src/gazebo_controller.s: src/gazebo_controller.cpp.s
 src/gazebo_controller.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/gazebo_controller.dir/build.make CMakeFiles/gazebo_controller.dir/src/gazebo_controller.cpp.s
 .PHONY : src/gazebo_controller.cpp.s
+
+src/marker_publisher.o: src/marker_publisher.cpp.o
+.PHONY : src/marker_publisher.o
+
+# target to build an object file
+src/marker_publisher.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/marker_publisher.dir/build.make CMakeFiles/marker_publisher.dir/src/marker_publisher.cpp.o
+.PHONY : src/marker_publisher.cpp.o
+
+src/marker_publisher.i: src/marker_publisher.cpp.i
+.PHONY : src/marker_publisher.i
+
+# target to preprocess a source file
+src/marker_publisher.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/marker_publisher.dir/build.make CMakeFiles/marker_publisher.dir/src/marker_publisher.cpp.i
+.PHONY : src/marker_publisher.cpp.i
+
+src/marker_publisher.s: src/marker_publisher.cpp.s
+.PHONY : src/marker_publisher.s
+
+# target to generate assembly for a file
+src/marker_publisher.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/marker_publisher.dir/build.make CMakeFiles/marker_publisher.dir/src/marker_publisher.cpp.s
+.PHONY : src/marker_publisher.cpp.s
+
+src/points_and_lines.o: src/points_and_lines.cpp.o
+.PHONY : src/points_and_lines.o
+
+# target to build an object file
+src/points_and_lines.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/src/points_and_lines.cpp.o
+.PHONY : src/points_and_lines.cpp.o
+
+src/points_and_lines.i: src/points_and_lines.cpp.i
+.PHONY : src/points_and_lines.i
+
+# target to preprocess a source file
+src/points_and_lines.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/src/points_and_lines.cpp.i
+.PHONY : src/points_and_lines.cpp.i
+
+src/points_and_lines.s: src/points_and_lines.cpp.s
+.PHONY : src/points_and_lines.s
+
+# target to generate assembly for a file
+src/points_and_lines.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/src/points_and_lines.cpp.s
+.PHONY : src/points_and_lines.cpp.s
 
 src/position_publisher.o: src/position_publisher.cpp.o
 .PHONY : src/position_publisher.o
@@ -465,6 +539,8 @@ help:
 	@echo "... encoder_talker"
 	@echo "... gazebo_controller"
 	@echo "... listener"
+	@echo "... marker_publisher"
+	@echo "... points_and_lines"
 	@echo "... position_talker"
 	@echo "... real_controller"
 	@echo "... talker"
@@ -474,6 +550,12 @@ help:
 	@echo "... src/gazebo_controller.o"
 	@echo "... src/gazebo_controller.i"
 	@echo "... src/gazebo_controller.s"
+	@echo "... src/marker_publisher.o"
+	@echo "... src/marker_publisher.i"
+	@echo "... src/marker_publisher.s"
+	@echo "... src/points_and_lines.o"
+	@echo "... src/points_and_lines.i"
+	@echo "... src/points_and_lines.s"
 	@echo "... src/position_publisher.o"
 	@echo "... src/position_publisher.i"
 	@echo "... src/position_publisher.s"

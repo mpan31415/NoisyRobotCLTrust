@@ -553,6 +553,9 @@ tutorial_interfaces_DIR:PATH=/home/michael/HRI/ros2_ws/install/tutorial_interfac
 //The directory containing a CMake configuration file for urdfdom_headers.
 urdfdom_headers_DIR:PATH=/opt/ros/humble/lib/x86_64-linux-gnu/urdfdom_headers/cmake
 
+//The directory containing a CMake configuration file for visualization_msgs.
+visualization_msgs_DIR:PATH=/opt/ros/humble/share/visualization_msgs/cmake
+
 //Path to a program.
 xmllint_BIN:FILEPATH=/usr/bin/xmllint
 

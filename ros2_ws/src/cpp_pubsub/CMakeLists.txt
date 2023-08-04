@@ -22,6 +22,9 @@ find_package(trajectory_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(kdl_parser REQUIRED)
 
+find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+
 # find_package(scipy REQUIRED)
 # find_package(kinpy REQUIRED)
 
@@ -65,13 +68,23 @@ ament_target_dependencies(gazebo_controller rclcpp tutorial_interfaces std_msgs 
 add_executable(real_controller src/real_controller.cpp)
 ament_target_dependencies(real_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
 
+add_executable(points_and_lines src/points_and_lines.cpp)
+ament_target_dependencies(points_and_lines rclcpp geometry_msgs visualization_msgs)
+
+add_executable(marker_publisher src/marker_publisher.cpp)
+ament_target_dependencies(marker_publisher rclcpp geometry_msgs visualization_msgs)
+
 install(TARGETS
   talker
   listener
   encoder_talker
+  points_and_lines
+
   position_talker
   gazebo_controller
   real_controller
+  marker_publisher
+  
   DESTINATION lib/${PROJECT_NAME})
 
 
@@ -87,7 +100,9 @@ install(PROGRAMS
   scripts/basic_subscriber.py
   scripts/joint_controller.py
   scripts/gazebo_controller.py
+
   scripts/traj_recorder.py
+
   DESTINATION lib/${PROJECT_NAME}
 )
 

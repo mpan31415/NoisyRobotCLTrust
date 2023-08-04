@@ -65,19 +65,26 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # active Falcon interface
+        # # start marker publisher
+        # Node(
+        #     package='cpp_pubsub',
+        #     executable='marker_publisher',
+        #     name='marker_publisher'
+        # ),
+
+        # activate Falcon interface
         Node(
             package='cpp_pubsub',
             executable='position_talker',
             name='position_talker'
         ),
 
-        # trajectory recorder node
-        Node(
-            package='cpp_pubsub',
-            executable='traj_recorder.py',
-            name='traj_recorder'
-        )
+        # # trajectory recorder node
+        # Node(
+        #     package='cpp_pubsub',
+        #     executable='traj_recorder.py',
+        #     name='traj_recorder'
+        # )
 
         # Node(
         #     package='cpp_pubsub',
