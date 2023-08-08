@@ -1,11 +1,8 @@
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/talker
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/listener
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/encoder_talker
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/points_and_lines
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/position_talker
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/gazebo_controller
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/real_controller
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/marker_publisher
+/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/const_br
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/environment/pythonpath.sh
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/environment/pythonpath.dsv
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub-0.0.0-py3.10.egg-info/dependency_links.txt
@@ -14,9 +11,6 @@
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub-0.0.0-py3.10.egg-info/PKG-INFO
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub/module_to_import.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub/__init__.py
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/basic_subscriber.py
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/joint_controller.py
-/home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/gazebo_controller.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/traj_recorder.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/launch/real.launch.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/launch/gazebo.launch.py

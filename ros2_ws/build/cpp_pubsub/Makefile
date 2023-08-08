@@ -198,45 +198,6 @@ cpp_pubsub_uninstall/fast:
 .PHONY : cpp_pubsub_uninstall/fast
 
 #=============================================================================
-# Target rules for targets named talker
-
-# Build rule for target.
-talker: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 talker
-.PHONY : talker
-
-# fast build rule for target.
-talker/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/talker.dir/build.make CMakeFiles/talker.dir/build
-.PHONY : talker/fast
-
-#=============================================================================
-# Target rules for targets named listener
-
-# Build rule for target.
-listener: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 listener
-.PHONY : listener
-
-# fast build rule for target.
-listener/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/listener.dir/build.make CMakeFiles/listener.dir/build
-.PHONY : listener/fast
-
-#=============================================================================
-# Target rules for targets named encoder_talker
-
-# Build rule for target.
-encoder_talker: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 encoder_talker
-.PHONY : encoder_talker
-
-# fast build rule for target.
-encoder_talker/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_talker.dir/build.make CMakeFiles/encoder_talker.dir/build
-.PHONY : encoder_talker/fast
-
-#=============================================================================
 # Target rules for targets named position_talker
 
 # Build rule for target.
@@ -276,19 +237,6 @@ real_controller/fast:
 .PHONY : real_controller/fast
 
 #=============================================================================
-# Target rules for targets named points_and_lines
-
-# Build rule for target.
-points_and_lines: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 points_and_lines
-.PHONY : points_and_lines
-
-# fast build rule for target.
-points_and_lines/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/build
-.PHONY : points_and_lines/fast
-
-#=============================================================================
 # Target rules for targets named marker_publisher
 
 # Build rule for target.
@@ -300,6 +248,19 @@ marker_publisher: cmake_check_build_system
 marker_publisher/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/marker_publisher.dir/build.make CMakeFiles/marker_publisher.dir/build
 .PHONY : marker_publisher/fast
+
+#=============================================================================
+# Target rules for targets named const_br
+
+# Build rule for target.
+const_br: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 const_br
+.PHONY : const_br
+
+# fast build rule for target.
+const_br/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/const_br.dir/build.make CMakeFiles/const_br.dir/build
+.PHONY : const_br/fast
 
 #=============================================================================
 # Target rules for targets named ament_cmake_python_copy_cpp_pubsub
@@ -327,29 +288,29 @@ ament_cmake_python_build_cpp_pubsub_egg/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/ament_cmake_python_build_cpp_pubsub_egg.dir/build.make CMakeFiles/ament_cmake_python_build_cpp_pubsub_egg.dir/build
 .PHONY : ament_cmake_python_build_cpp_pubsub_egg/fast
 
-src/encoder_publisher.o: src/encoder_publisher.cpp.o
-.PHONY : src/encoder_publisher.o
+src/const_br.o: src/const_br.cpp.o
+.PHONY : src/const_br.o
 
 # target to build an object file
-src/encoder_publisher.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_talker.dir/build.make CMakeFiles/encoder_talker.dir/src/encoder_publisher.cpp.o
-.PHONY : src/encoder_publisher.cpp.o
+src/const_br.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/const_br.dir/build.make CMakeFiles/const_br.dir/src/const_br.cpp.o
+.PHONY : src/const_br.cpp.o
 
-src/encoder_publisher.i: src/encoder_publisher.cpp.i
-.PHONY : src/encoder_publisher.i
+src/const_br.i: src/const_br.cpp.i
+.PHONY : src/const_br.i
 
 # target to preprocess a source file
-src/encoder_publisher.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_talker.dir/build.make CMakeFiles/encoder_talker.dir/src/encoder_publisher.cpp.i
-.PHONY : src/encoder_publisher.cpp.i
+src/const_br.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/const_br.dir/build.make CMakeFiles/const_br.dir/src/const_br.cpp.i
+.PHONY : src/const_br.cpp.i
 
-src/encoder_publisher.s: src/encoder_publisher.cpp.s
-.PHONY : src/encoder_publisher.s
+src/const_br.s: src/const_br.cpp.s
+.PHONY : src/const_br.s
 
 # target to generate assembly for a file
-src/encoder_publisher.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_talker.dir/build.make CMakeFiles/encoder_talker.dir/src/encoder_publisher.cpp.s
-.PHONY : src/encoder_publisher.cpp.s
+src/const_br.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/const_br.dir/build.make CMakeFiles/const_br.dir/src/const_br.cpp.s
+.PHONY : src/const_br.cpp.s
 
 src/gazebo_controller.o: src/gazebo_controller.cpp.o
 .PHONY : src/gazebo_controller.o
@@ -399,30 +360,6 @@ src/marker_publisher.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/marker_publisher.dir/build.make CMakeFiles/marker_publisher.dir/src/marker_publisher.cpp.s
 .PHONY : src/marker_publisher.cpp.s
 
-src/points_and_lines.o: src/points_and_lines.cpp.o
-.PHONY : src/points_and_lines.o
-
-# target to build an object file
-src/points_and_lines.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/src/points_and_lines.cpp.o
-.PHONY : src/points_and_lines.cpp.o
-
-src/points_and_lines.i: src/points_and_lines.cpp.i
-.PHONY : src/points_and_lines.i
-
-# target to preprocess a source file
-src/points_and_lines.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/src/points_and_lines.cpp.i
-.PHONY : src/points_and_lines.cpp.i
-
-src/points_and_lines.s: src/points_and_lines.cpp.s
-.PHONY : src/points_and_lines.s
-
-# target to generate assembly for a file
-src/points_and_lines.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/points_and_lines.dir/build.make CMakeFiles/points_and_lines.dir/src/points_and_lines.cpp.s
-.PHONY : src/points_and_lines.cpp.s
-
 src/position_publisher.o: src/position_publisher.cpp.o
 .PHONY : src/position_publisher.o
 
@@ -446,30 +383,6 @@ src/position_publisher.s: src/position_publisher.cpp.s
 src/position_publisher.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/position_talker.dir/build.make CMakeFiles/position_talker.dir/src/position_publisher.cpp.s
 .PHONY : src/position_publisher.cpp.s
-
-src/publisher_member_function.o: src/publisher_member_function.cpp.o
-.PHONY : src/publisher_member_function.o
-
-# target to build an object file
-src/publisher_member_function.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/talker.dir/build.make CMakeFiles/talker.dir/src/publisher_member_function.cpp.o
-.PHONY : src/publisher_member_function.cpp.o
-
-src/publisher_member_function.i: src/publisher_member_function.cpp.i
-.PHONY : src/publisher_member_function.i
-
-# target to preprocess a source file
-src/publisher_member_function.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/talker.dir/build.make CMakeFiles/talker.dir/src/publisher_member_function.cpp.i
-.PHONY : src/publisher_member_function.cpp.i
-
-src/publisher_member_function.s: src/publisher_member_function.cpp.s
-.PHONY : src/publisher_member_function.s
-
-# target to generate assembly for a file
-src/publisher_member_function.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/talker.dir/build.make CMakeFiles/talker.dir/src/publisher_member_function.cpp.s
-.PHONY : src/publisher_member_function.cpp.s
 
 src/real_controller.o: src/real_controller.cpp.o
 .PHONY : src/real_controller.o
@@ -495,30 +408,6 @@ src/real_controller.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/real_controller.dir/build.make CMakeFiles/real_controller.dir/src/real_controller.cpp.s
 .PHONY : src/real_controller.cpp.s
 
-src/subscriber_member_function.o: src/subscriber_member_function.cpp.o
-.PHONY : src/subscriber_member_function.o
-
-# target to build an object file
-src/subscriber_member_function.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/listener.dir/build.make CMakeFiles/listener.dir/src/subscriber_member_function.cpp.o
-.PHONY : src/subscriber_member_function.cpp.o
-
-src/subscriber_member_function.i: src/subscriber_member_function.cpp.i
-.PHONY : src/subscriber_member_function.i
-
-# target to preprocess a source file
-src/subscriber_member_function.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/listener.dir/build.make CMakeFiles/listener.dir/src/subscriber_member_function.cpp.i
-.PHONY : src/subscriber_member_function.cpp.i
-
-src/subscriber_member_function.s: src/subscriber_member_function.cpp.s
-.PHONY : src/subscriber_member_function.s
-
-# target to generate assembly for a file
-src/subscriber_member_function.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/listener.dir/build.make CMakeFiles/listener.dir/src/subscriber_member_function.cpp.s
-.PHONY : src/subscriber_member_function.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -536,38 +425,26 @@ help:
 	@echo "... ament_cmake_python_copy_cpp_pubsub"
 	@echo "... cpp_pubsub_uninstall"
 	@echo "... uninstall"
-	@echo "... encoder_talker"
+	@echo "... const_br"
 	@echo "... gazebo_controller"
-	@echo "... listener"
 	@echo "... marker_publisher"
-	@echo "... points_and_lines"
 	@echo "... position_talker"
 	@echo "... real_controller"
-	@echo "... talker"
-	@echo "... src/encoder_publisher.o"
-	@echo "... src/encoder_publisher.i"
-	@echo "... src/encoder_publisher.s"
+	@echo "... src/const_br.o"
+	@echo "... src/const_br.i"
+	@echo "... src/const_br.s"
 	@echo "... src/gazebo_controller.o"
 	@echo "... src/gazebo_controller.i"
 	@echo "... src/gazebo_controller.s"
 	@echo "... src/marker_publisher.o"
 	@echo "... src/marker_publisher.i"
 	@echo "... src/marker_publisher.s"
-	@echo "... src/points_and_lines.o"
-	@echo "... src/points_and_lines.i"
-	@echo "... src/points_and_lines.s"
 	@echo "... src/position_publisher.o"
 	@echo "... src/position_publisher.i"
 	@echo "... src/position_publisher.s"
-	@echo "... src/publisher_member_function.o"
-	@echo "... src/publisher_member_function.i"
-	@echo "... src/publisher_member_function.s"
 	@echo "... src/real_controller.o"
 	@echo "... src/real_controller.i"
 	@echo "... src/real_controller.s"
-	@echo "... src/subscriber_member_function.o"
-	@echo "... src/subscriber_member_function.i"
-	@echo "... src/subscriber_member_function.s"
 .PHONY : help
 
 

@@ -20,7 +20,7 @@ MAPPING_RATIO = 2.0
 
 NUM_POINTS = 200
 
-SCRIPTS_DIR = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/scripts"
+TRAJ_PLOTS_DIR = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/traj_plots/"
 
 FILE_NAME = "control00"
 
@@ -86,7 +86,7 @@ class TrajectoryRecorder(Node):
         self.ax.legend()
 
         # saving the figure before I show it (is required)
-        plt.savefig(SCRIPTS_DIR + "/traj_plots/" + FILE_NAME + ".png")
+        plt.savefig(TRAJ_PLOTS_DIR + FILE_NAME + ".png")
 
         plt.show()
 

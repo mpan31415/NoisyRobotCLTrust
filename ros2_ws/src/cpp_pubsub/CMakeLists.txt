@@ -25,6 +25,9 @@ find_package(kdl_parser REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+
 # find_package(scipy REQUIRED)
 # find_package(kinpy REQUIRED)
 
@@ -35,22 +38,6 @@ find_package(tutorial_interfaces REQUIRED)
 
 
 ############################################ CPP nodes ############################################
-
-add_executable(talker src/publisher_member_function.cpp)
-ament_target_dependencies(talker rclcpp std_msgs)
-
-add_executable(listener src/subscriber_member_function.cpp)
-ament_target_dependencies(listener rclcpp std_msgs)
-
-add_executable(encoder_talker src/encoder_publisher.cpp)
-ament_target_dependencies(encoder_talker rclcpp std_msgs)
-target_link_libraries(encoder_talker /usr/local/lib/libdhd.so.3
-                                      /usr/local/lib/libdhd.a
-                                      # /usr/local/lib/libdhd.so.3.15.0
-                                      # /usr/local/lib/libdrd.a
-                                      /usr/local/lib/libdrd.so.3
-                                      # /usr/local/lib/libdrd.so.3.15.0
-)
 
 add_executable(position_talker src/position_publisher.cpp)
 ament_target_dependencies(position_talker rclcpp tutorial_interfaces)
@@ -68,22 +55,19 @@ ament_target_dependencies(gazebo_controller rclcpp tutorial_interfaces std_msgs 
 add_executable(real_controller src/real_controller.cpp)
 ament_target_dependencies(real_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
 
-add_executable(points_and_lines src/points_and_lines.cpp)
-ament_target_dependencies(points_and_lines rclcpp geometry_msgs visualization_msgs)
-
 add_executable(marker_publisher src/marker_publisher.cpp)
 ament_target_dependencies(marker_publisher rclcpp geometry_msgs visualization_msgs)
 
+add_executable(const_br src/const_br.cpp)
+ament_target_dependencies(const_br geometry_msgs rclcpp tf2 tf2_ros)
+
 install(TARGETS
-  talker
-  listener
-  encoder_talker
-  points_and_lines
 
   position_talker
   gazebo_controller
   real_controller
   marker_publisher
+  const_br
   
   DESTINATION lib/${PROJECT_NAME})
 
@@ -97,10 +81,8 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  scripts/basic_subscriber.py
-  scripts/joint_controller.py
-  scripts/gazebo_controller.py
 
+  # scripts/const_br.py
   scripts/traj_recorder.py
 
   DESTINATION lib/${PROJECT_NAME}

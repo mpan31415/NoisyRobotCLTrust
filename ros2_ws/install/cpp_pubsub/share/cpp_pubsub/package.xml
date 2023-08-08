@@ -30,6 +30,9 @@
     <depend>visualization_msgs</depend>
     <depend>kdl_parser</depend>
 
+    <depend>python3-numpy</depend>
+    <depend>tf2_ros_py</depend>
+
     <depend>scipy</depend>
     <depend>kinpy</depend>
     <depend>dhd</depend>
