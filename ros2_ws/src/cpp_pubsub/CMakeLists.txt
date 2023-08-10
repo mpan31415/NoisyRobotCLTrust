@@ -83,7 +83,6 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
 
-  # scripts/const_br.py
   scripts/traj_recorder.py
 
   DESTINATION lib/${PROJECT_NAME}

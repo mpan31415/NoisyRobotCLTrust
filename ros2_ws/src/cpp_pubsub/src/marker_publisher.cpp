@@ -11,13 +11,16 @@
 using namespace std::chrono_literals;
 
 
-
-
-
 class MarkerPublisher : public rclcpp::Node
 {
   public:
 
+    // parameters name list
+    std::vector<std::string> param_names = {"part_id", "traj_id", "auto_id"};
+    int part_id {0};
+    int traj_id {0};
+    int auto_id {0};
+    
      //////// KEEP CONSISTENT WITH REAL CONTROLLER ////////
     std::vector<double> origin {0.4559, 0.0, 0.3846};
     const int max_points = 200;
@@ -25,13 +28,27 @@ class MarkerPublisher : public rclcpp::Node
 
     MarkerPublisher()
     : Node("marker_publisher")
-    {   
+    { 
+      // parameter stuff
+      this->declare_parameter(param_names.at(0), 0);
+      this->declare_parameter(param_names.at(1), 0);
+      this->declare_parameter(param_names.at(2), 0);
+      // this->declare_parameter(param_names.at(0), rclcpp::PARAMETER_INTEGER);
+      
+      std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
+      part_id = std::stoi(params.at(0).value_to_string().c_str());
+      traj_id = std::stoi(params.at(1).value_to_string().c_str());
+      auto_id = std::stoi(params.at(2).value_to_string().c_str());
+      print_params();
+
       // create the marker publisher
       marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
       marker_timer_ = this->create_wall_timer(20ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 50 Hz
     }
 
+
   private:
+
     void marker_callback()
     {
       auto line_strip = visualization_msgs::msg::Marker();
@@ -68,9 +85,18 @@ class MarkerPublisher : public rclcpp::Node
         line_strip.points.push_back(p);
       }
 
-      std::cout << "Publishing!\n" << std::endl;
+      // std::cout << "Publishing!\n" << std::endl;
       marker_pub_->publish(line_strip);    // this is a continuous line, good!
 
+    }
+
+    void print_params() {
+      for (unsigned int i=0; i<10; i++) std::cout << "\n";
+      std::cout << "\n\nThe current parameters [marker_publisher] are as follows:\n" << std::endl;
+      std::cout << "Participant ID = " << part_id << "\n" << std::endl;
+      std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;
+      std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
+      for (unsigned int i=0; i<10; i++) std::cout << "\n";
     }
 
 

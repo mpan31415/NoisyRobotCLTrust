@@ -33,6 +33,24 @@ class TrajectoryRecorder(Node):
 
         super().__init__('traj_recorder')
 
+        # parameter stuff
+        self.param_names = ['part_id', 'traj_id', 'auto_id']
+        self.declare_parameters(
+            namespace='',
+            parameters=[
+                (self.param_names[0], 0),
+                (self.param_names[1], 0),
+                (self.param_names[2], 0)
+                # (self.param_names[2], rclpy.Parameter.Type.INTEGER)
+            ]
+        )
+        (part_param, traj_param, auto_param) = self.get_parameters(self.param_names)
+        self.part_id = part_param.value
+        self.traj_id = traj_param.value
+        self.auto_id = auto_param.value
+
+        self.print_params()
+
         # tcp position subscriber
         self.tcp_pos_sub = self.create_subscription(Falconpos, 'tcp_position', self.tcp_pos_callback, 10)
         self.tcp_pos_sub  # prevent unused variable warning
@@ -90,8 +108,6 @@ class TrajectoryRecorder(Node):
 
         plt.show()
 
-        
-    
 
     ##############################################################################
     def plot_circle_reference(self):
@@ -113,7 +129,20 @@ class TrajectoryRecorder(Node):
         # Do plotting
         self.ax.plot(x, y, z, label='reference trajectory')
 
+    
+    ##############################################################################
+    def print_params(self):
+        print("\n" * 10)
+        print("=" * 100)
 
+        print("\n\nThe current parameters [traj_recorder] are as follows:\n")
+        print("The participant_id = %d\n\n" % self.part_id)
+        print("The trajectory_id = %d\n\n" % self.traj_id)
+        print("The autonomy_id = %d\n\n" % self.auto_id)
+
+        print("=" * 100)
+        print("\n" * 10)
+        
 
 
 

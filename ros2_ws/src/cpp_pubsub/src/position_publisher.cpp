@@ -21,6 +21,12 @@ class PositionPublisher : public rclcpp::Node
 {
 public:
 
+  // parameters name list
+  std::vector<std::string> param_names = {"part_id", "traj_id", "auto_id"};
+  int part_id {0};
+  int traj_id {0};
+  int auto_id {0};
+
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
@@ -41,6 +47,19 @@ public:
   { 
     choice = a_choice;
 
+    // parameter stuff
+    this->declare_parameter(param_names.at(0), 0);
+    this->declare_parameter(param_names.at(1), 0);
+    this->declare_parameter(param_names.at(2), 0);
+    // this->declare_parameter(param_names.at(2), rclcpp::PARAMETER_INTEGER);
+    
+    std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
+    part_id = std::stoi(params.at(0).value_to_string().c_str());
+    traj_id = std::stoi(params.at(1).value_to_string().c_str());
+    auto_id = std::stoi(params.at(2).value_to_string().c_str());
+    print_params();
+
+    // publisher
     publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
     timer_ = this->create_wall_timer(
       1ms, std::bind(&PositionPublisher::timer_callback, this)); ///////// publishing at 1000 Hz /////////
@@ -78,7 +97,7 @@ private:
     message.y = p[1] * 100;
     message.z = p[2] * 100;
 
-    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    // RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
     // This allows in-line printing
     // for (int i=0; i<3; i++) printf ("p[%d] = %03f, ", i, p[i]*100);
     // printf ("          \r");
@@ -121,6 +140,15 @@ private:
       K[0] = 2000.0; K[1] = 2000.0; K[2] = 2000.0;
     }
 
+  }
+
+  void print_params() {
+    for (unsigned int i=0; i<10; i++) std::cout << "\n";
+    std::cout << "\n\nThe current parameters [position_publisher] are as follows:\n" << std::endl;
+    std::cout << "Participant ID = " << part_id << "\n" << std::endl;
+    std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;
+    std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
+    for (unsigned int i=0; i<10; i++) std::cout << "\n";
   }
 
   rclcpp::TimerBase::SharedPtr timer_;

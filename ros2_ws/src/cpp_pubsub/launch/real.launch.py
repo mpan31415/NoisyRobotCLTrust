@@ -20,6 +20,16 @@ def generate_launch_description():
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
+    # my own launch arguments
+    participant_parameter_name = 'part_id'
+    trajectory_parameter_name = 'traj_id'
+    autonomy_parameter_name = 'auto_id'
+
+    participant = LaunchConfiguration(participant_parameter_name)
+    trajectory = LaunchConfiguration(trajectory_parameter_name)
+    autonomy = LaunchConfiguration(autonomy_parameter_name)
+
+
     return LaunchDescription([
         DeclareLaunchArgument(
             robot_ip_parameter_name,
@@ -31,7 +41,7 @@ def generate_launch_description():
             description='Visualize the robot in Rviz'),
         DeclareLaunchArgument(
             use_fake_hardware_parameter_name,
-            default_value='true',
+            default_value='false',
             description='Use fake hardware'),
         DeclareLaunchArgument(
             fake_sensor_commands_parameter_name,
@@ -43,6 +53,20 @@ def generate_launch_description():
             default_value='true',
             description='Use Franka Gripper as an end-effector, otherwise, the robot is loaded '
                         'without an end-effector.'),
+
+        # my experimental config (using launch arguments)
+        DeclareLaunchArgument(
+            participant_parameter_name,
+            default_value='0',  
+            description='Participant ID parameter'),
+        DeclareLaunchArgument(
+            trajectory_parameter_name,
+            default_value='0',  
+            description='Trajectory ID parameter'),
+        DeclareLaunchArgument(
+            autonomy_parameter_name,
+            default_value='0',  
+            description='Autonomy ID parameter'),
 
         ### franka_bringup launch ###
         IncludeLaunchDescription(
@@ -73,37 +97,66 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # publish camera frame
+        # publish camera frame [need camera to be connected]
         Node(
             package='cpp_pubsub',
             executable='const_br',
             name='const_br'
         ),
 
-        # activate Falcon node
+        # activate Falcon node [need Falcon to be connected]
         # Node(
         #     package='cpp_pubsub',
         #     executable='position_talker',
+        #     parameters=[
+        #         {participant_parameter_name: participant},
+        #         {trajectory_parameter_name: trajectory},
+        #         {autonomy_parameter_name: autonomy}
+        #     ],
+        #     output='screen',
+        #     emulate_tty=True,
         #     name='position_talker'
         # ),
 
-        # # marker publisher node
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='marker_publisher',
-        #     name='marker_publisher'
-        # ),
+        # marker publisher node
+        Node(
+            package='cpp_pubsub',
+            executable='marker_publisher',
+            parameters=[
+                {participant_parameter_name: participant},
+                {trajectory_parameter_name: trajectory},
+                {autonomy_parameter_name: autonomy}
+            ],
+            output='screen',
+            emulate_tty=True,
+            name='marker_publisher'
+        ),
 
-        # # trajectory recorder node
+        # trajectory recorder node
         # Node(
         #     package='cpp_pubsub',
         #     executable='traj_recorder.py',
-        #     name='traj_recorder'
-        # )
+        #     parameters=[
+        #         {participant_parameter_name: participant},
+        #         {trajectory_parameter_name: trajectory},
+        #         {autonomy_parameter_name: autonomy}
+        #     ],
+        #     output='screen',
+        #     emulate_tty=True
+        # ),
 
+        # # real robot controller node [need position_talker to be running]
         # Node(
         #     package='cpp_pubsub',
         #     executable='real_controller',
+        #     parameters=[
+        #         {participant_parameter_name: participant},
+        #         {trajectory_parameter_name: trajectory},
+        #         {autonomy_parameter_name: autonomy}
+        #     ],
+        #     output='screen',
+        #     emulate_tty=True,
         #     name='real_controller'
         # ),
+
     ])
