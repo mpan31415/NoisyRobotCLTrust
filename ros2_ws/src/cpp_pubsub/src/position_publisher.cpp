@@ -15,6 +15,13 @@
 using namespace std::chrono_literals;
 
 
+/////////////////// global variables ///////////////////
+std::vector< std::vector<double> > centering_dict {
+  {0.00, 0.00, 0.05},
+  {0.00, 0.00, 0.05}
+};
+
+
 /////////////// DEFINITION OF PUBLISHER CLASS //////////////
 
 class PositionPublisher : public rclcpp::Node
@@ -27,6 +34,7 @@ public:
   int traj_id {0};
   int auto_id {0};
 
+  // other arrays
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
@@ -36,7 +44,8 @@ public:
 
   ///////// -> this is the centering Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
   ///////// -> max bounds are around +-0.05m (5cm)
-  double centering[3] {0.00, 0.00, 0.05};   ///////// -> note: this is in [meters]
+  ///////// -> this depends on the auto_id parameter
+  std::vector<double> centering {0.00, 0.00, 0.00};   ///////// -> note: this is in [meters]
   // guide:
   // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
   // positive axes directions are {out, right, up}
@@ -58,6 +67,9 @@ public:
     traj_id = std::stoi(params.at(1).value_to_string().c_str());
     auto_id = std::stoi(params.at(2).value_to_string().c_str());
     print_params();
+
+    // update centering position using traj_id
+    centering = centering_dict.at(traj_id);
 
     // publisher
     publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);

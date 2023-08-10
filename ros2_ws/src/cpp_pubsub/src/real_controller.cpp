@@ -45,11 +45,24 @@ bool got_orientation = false;
 
 std::vector<double> tcp_pos {0.3069, 0.0, 0.4853};   // initialized the same as the "home" position
 
+//////// global dictionaries ////////
+std::vector< std::vector<double> > alphas_dict {
+  {0.0, 0.0, 0.0},
+  {0.2, 0.2, 0.2},
+  {0.4, 0.4, 0.4},
+  {0.6, 0.6, 0.6},
+  {0.8, 0.8, 0.8},
+  {1.0, 1.0, 1.0}
+};
+
 
 /////////////////// function declarations ///////////////////
 void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_vals, std::vector<double>& res_vals);
 
-void get_robot_control(double t, std::vector<double>& vals);
+///// hard-coded trajectories /////
+void get_robot_control0(double t, std::vector<double>& vals);
+void get_robot_control1(double t, std::vector<double>& vals);
+void get_robot_control2(double t, std::vector<double>& vals);
 
 bool within_limits(std::vector<double>& vals);
 bool create_tree();
@@ -96,7 +109,7 @@ public:
 
   // alpha values in {x, y, z} dimensions, used for convex combination of human and robot input
   // alpha values correspond to the share of HUMAN INPUT
-  // they have to be in the range of [0, 1]
+  // they have to be in the range of [0, 1], and here, we are only initializing them
   double ax = 0.0;
   double ay = 0.0;
   double az = 0.0;
@@ -125,6 +138,11 @@ public:
     traj_id = std::stoi(params.at(1).value_to_string().c_str());
     auto_id = std::stoi(params.at(2).value_to_string().c_str());
     print_params();
+
+    // update {ax, ay, az} values using the parameter "auto_id"
+    ax = alphas_dict.at(auto_id).at(0);
+    ay = alphas_dict.at(auto_id).at(1);
+    az = alphas_dict.at(auto_id).at(2);
 
     // joint controller publisher & timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
@@ -161,11 +179,13 @@ private:
       auto traj_message = trajectory_msgs::msg::JointTrajectory();
       traj_message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
-
-      // get the robot control offset in Cartesian space
+      // get the robot control offset in Cartesian space (calling the corresponding function of the traj_id)
       t_param = (double) (count - max_count) / max_points * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
-      get_robot_control(t_param, robot_offset);
-
+      switch (traj_id) {
+        case 0: get_robot_control0(t_param, robot_offset); break;
+        case 1: get_robot_control1(t_param, robot_offset); break;
+        case 2: get_robot_control2(t_param, robot_offset); break;
+      }
 
       // perform the convex combination of robot and human offsets
       // also adding the origin and thus representing it as tcp_pos in the robot's base frame
@@ -302,28 +322,57 @@ private:
 
 
 
-/////////////////////////////// robot control (trajectory following) function ///////////////////////////////
+/////////////////////////////// robot control (trajectory following) functions ///////////////////////////////
 
-void get_robot_control(double t, std::vector<double>& vals) {
-
+void get_robot_control0(double t, std::vector<double>& vals) {
   // circle of radius 0.1m, parametrized in the range [0, 2pi]
   double r = 0.1;
-
   double x = 0.0;
   double y = r * sin(t);
   double z = r * cos(t);
-
   vals.at(0) = x;
   vals.at(1) = y;
   vals.at(2) = z;
-
   // if recording hasn't started, move the robot to the desired starting position of the circle
   if (t < 0.0 || t > 2*M_PI) {
     vals.at(0) = 0.00;
     vals.at(1) = 0.00;
     vals.at(2) = r;
   }
+}
 
+void get_robot_control1(double t, std::vector<double>& vals) {
+  // circle of radius 0.1m, parametrized in the range [0, 2pi]
+  double r = 0.1;
+  double x = 0.0;
+  double y = r * sin(t);
+  double z = r * cos(t);
+  vals.at(0) = x;
+  vals.at(1) = y;
+  vals.at(2) = z;
+  // if recording hasn't started, move the robot to the desired starting position of the circle
+  if (t < 0.0 || t > 2*M_PI) {
+    vals.at(0) = 0.00;
+    vals.at(1) = 0.00;
+    vals.at(2) = r;
+  }
+}
+
+void get_robot_control2(double t, std::vector<double>& vals) {
+  // circle of radius 0.1m, parametrized in the range [0, 2pi]
+  double r = 0.1;
+  double x = 0.0;
+  double y = r * sin(t);
+  double z = r * cos(t);
+  vals.at(0) = x;
+  vals.at(1) = y;
+  vals.at(2) = z;
+  // if recording hasn't started, move the robot to the desired starting position of the circle
+  if (t < 0.0 || t > 2*M_PI) {
+    vals.at(0) = 0.00;
+    vals.at(1) = 0.00;
+    vals.at(2) = r;
+  }
 }
 
 

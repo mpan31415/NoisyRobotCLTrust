@@ -100,17 +100,23 @@ class TrajectoryRecorder(Node):
 
         # Do plotting
         self.ax.plot(self.xs, self.ys, self.zs, label='recorded trajectory')
-        self.plot_circle_reference()
+
+        match self.traj_id:
+            case 0:
+                self.plot_reference0()
+            case 1:
+                self.plot_reference1()
+
         self.ax.legend()
 
         # saving the figure before I show it (is required)
-        plt.savefig(TRAJ_PLOTS_DIR + FILE_NAME + ".png")
+        plt.savefig(TRAJ_PLOTS_DIR + FILE_NAME + "_part" + self.part_id + ".png")
 
         plt.show()
 
 
     ##############################################################################
-    def plot_circle_reference(self):
+    def plot_reference0(self):
 
         # Spherical coordinates
         r = 0.1  # [meters]
@@ -127,7 +133,28 @@ class TrajectoryRecorder(Node):
             z[i] += ORIGIN[2]
 
         # Do plotting
-        self.ax.plot(x, y, z, label='reference trajectory')
+        self.ax.plot(x, y, z, label='reference trajectory 0')
+
+    
+    ##############################################################################
+    def plot_reference1(self):
+
+        # Spherical coordinates
+        r = 0.1  # [meters]
+        t = np.linspace(0, 2 * np.pi, NUM_POINTS)
+
+        x = np.zeros(NUM_POINTS)
+        y = r * np.sin(t)
+        z = r * np.cos(t)
+
+        # adjust for the origin
+        for i in range(NUM_POINTS):
+            x[i] += ORIGIN[0]
+            y[i] += ORIGIN[1]
+            z[i] += ORIGIN[2]
+
+        # Do plotting
+        self.ax.plot(x, y, z, label='reference trajectory 1')
 
     
     ##############################################################################
