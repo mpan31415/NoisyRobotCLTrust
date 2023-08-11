@@ -18,13 +18,13 @@ using namespace std::chrono_literals;
 /////////////////// global variables ///////////////////
 std::vector< std::vector<double> > centering_dict {
   {0.00, 0.00, 0.05},
-  {0.00, 0.00, 0.05}
+  {-0.05, 0.00, 0.00}
 };
 
 
 /////////////// DEFINITION OF PUBLISHER CLASS //////////////
 
-class PositionPublisher : public rclcpp::Node
+class PositionTalker : public rclcpp::Node
 {
 public:
 
@@ -42,7 +42,7 @@ public:
   double C[3] {5.0, 5.0, 5.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
   int choice;
 
-  ///////// -> this is the centering Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
+  ///////// -> this is the centering / starting Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
   ///////// -> max bounds are around +-0.05m (5cm)
   ///////// -> this depends on the auto_id parameter
   std::vector<double> centering {0.00, 0.00, 0.00};   ///////// -> note: this is in [meters]
@@ -51,8 +51,8 @@ public:
   // positive axes directions are {out, right, up}
 
 
-  PositionPublisher(int a_choice)
-  : Node("position_publisher")
+  PositionTalker(int a_choice)
+  : Node("position_talker")
   { 
     choice = a_choice;
 
@@ -74,7 +74,7 @@ public:
     // publisher
     publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
     timer_ = this->create_wall_timer(
-      1ms, std::bind(&PositionPublisher::timer_callback, this)); ///////// publishing at 1000 Hz /////////
+      1ms, std::bind(&PositionTalker::timer_callback, this)); ///////// publishing at 1000 Hz /////////
   }
 
 
@@ -224,7 +224,7 @@ int main(int argc, char * argv[])
 
 
 
-  std::shared_ptr<PositionPublisher> michael = std::make_shared<PositionPublisher>(choice);
+  std::shared_ptr<PositionTalker> michael = std::make_shared<PositionTalker>(choice);
 
   rclcpp::spin(michael);
 

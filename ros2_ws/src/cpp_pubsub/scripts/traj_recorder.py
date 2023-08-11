@@ -26,7 +26,7 @@ FILE_NAME = "control00"
 
 
 
-class TrajectoryRecorder(Node):
+class TrajRecorder(Node):
 
     ##############################################################################
     def __init__(self):
@@ -178,7 +178,7 @@ def main(args=None):
 
     rclpy.init(args=args)
 
-    michael = TrajectoryRecorder()
+    michael = TrajRecorder()
 
     rclpy.spin(michael)
 

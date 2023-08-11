@@ -69,28 +69,28 @@ include CMakeFiles/position_talker.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/position_talker.dir/flags.make
 
-CMakeFiles/position_talker.dir/src/position_publisher.cpp.o: CMakeFiles/position_talker.dir/flags.make
-CMakeFiles/position_talker.dir/src/position_publisher.cpp.o: /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_publisher.cpp
-CMakeFiles/position_talker.dir/src/position_publisher.cpp.o: CMakeFiles/position_talker.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/cpp_pubsub/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/position_talker.dir/src/position_publisher.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/position_talker.dir/src/position_publisher.cpp.o -MF CMakeFiles/position_talker.dir/src/position_publisher.cpp.o.d -o CMakeFiles/position_talker.dir/src/position_publisher.cpp.o -c /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_publisher.cpp
+CMakeFiles/position_talker.dir/src/position_talker.cpp.o: CMakeFiles/position_talker.dir/flags.make
+CMakeFiles/position_talker.dir/src/position_talker.cpp.o: /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_talker.cpp
+CMakeFiles/position_talker.dir/src/position_talker.cpp.o: CMakeFiles/position_talker.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/cpp_pubsub/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/position_talker.dir/src/position_talker.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/position_talker.dir/src/position_talker.cpp.o -MF CMakeFiles/position_talker.dir/src/position_talker.cpp.o.d -o CMakeFiles/position_talker.dir/src/position_talker.cpp.o -c /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_talker.cpp
 
-CMakeFiles/position_talker.dir/src/position_publisher.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/position_talker.dir/src/position_publisher.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_publisher.cpp > CMakeFiles/position_talker.dir/src/position_publisher.cpp.i
+CMakeFiles/position_talker.dir/src/position_talker.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/position_talker.dir/src/position_talker.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_talker.cpp > CMakeFiles/position_talker.dir/src/position_talker.cpp.i
 
-CMakeFiles/position_talker.dir/src/position_publisher.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/position_talker.dir/src/position_publisher.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_publisher.cpp -o CMakeFiles/position_talker.dir/src/position_publisher.cpp.s
+CMakeFiles/position_talker.dir/src/position_talker.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/position_talker.dir/src/position_talker.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/michael/HRI/ros2_ws/src/cpp_pubsub/src/position_talker.cpp -o CMakeFiles/position_talker.dir/src/position_talker.cpp.s
 
 # Object files for target position_talker
 position_talker_OBJECTS = \
-"CMakeFiles/position_talker.dir/src/position_publisher.cpp.o"
+"CMakeFiles/position_talker.dir/src/position_talker.cpp.o"
 
 # External object files for target position_talker
 position_talker_EXTERNAL_OBJECTS =
 
-position_talker: CMakeFiles/position_talker.dir/src/position_publisher.cpp.o
+position_talker: CMakeFiles/position_talker.dir/src/position_talker.cpp.o
 position_talker: CMakeFiles/position_talker.dir/build.make
 position_talker: /opt/ros/humble/lib/librclcpp.so
 position_talker: /home/michael/HRI/ros2_ws/install/tutorial_interfaces/lib/libtutorial_interfaces__rosidl_typesupport_fastrtps_c.so

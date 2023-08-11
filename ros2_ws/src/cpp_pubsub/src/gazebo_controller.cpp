@@ -106,7 +106,7 @@ public:
 
   ////////////////////////////////////////////////////////////////////////
   GazeboController()
-  : Node("real_controller")
+  : Node("gazebo_controller")
   { 
     // joint controller publisher & timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);

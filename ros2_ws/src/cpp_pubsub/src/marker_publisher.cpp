@@ -11,7 +11,7 @@
 using namespace std::chrono_literals;
 
 
-///////// functions to plot reference trajectory
+/////////  functions to plot reference trajectory  /////////
 void generate_marker0(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
 void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
 
@@ -47,7 +47,7 @@ class MarkerPublisher : public rclcpp::Node
 
       // create the marker publisher
       marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
-      marker_timer_ = this->create_wall_timer(20ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 50 Hz
+      marker_timer_ = this->create_wall_timer(1000ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 1 Hz
     }
 
 
@@ -81,8 +81,8 @@ class MarkerPublisher : public rclcpp::Node
 
 
 /////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE TRAJECTORY MARKERS ///////////////////////////////////
-void generate_marker0(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points) {
-
+void generate_marker0(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points) 
+{
   double r = 0.1;
 
   // fill-in the traj_marker message
@@ -118,9 +118,9 @@ void generate_marker0(visualization_msgs::msg::Marker &traj_marker, std::vector<
   }
 }
 
-void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points) {
-
-  double r = 0.2;
+void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points)
+{
+  double r = 0.1;
 
   // fill-in the traj_marker message
   traj_marker.header.frame_id = "/panda_link0";
@@ -142,9 +142,9 @@ void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<
 
     double t = (double) count / max_points * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
 
-    double x = 0.0 + origin.at(0);
+    double x = -r * cos(t) + origin.at(0);
     double y = r * sin(t) + origin.at(1);
-    double z = r * cos(t) + origin.at(2);
+    double z = 0.0 + origin.at(2);
 
     geometry_msgs::msg::Point p;
     p.x = x;
@@ -154,7 +154,6 @@ void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<
     traj_marker.points.push_back(p);
   }
 }
-
 
 
 

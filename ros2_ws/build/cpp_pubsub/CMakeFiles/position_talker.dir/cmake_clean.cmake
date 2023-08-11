@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/position_talker.dir/src/position_publisher.cpp.o"
-  "CMakeFiles/position_talker.dir/src/position_publisher.cpp.o.d"
+  "CMakeFiles/position_talker.dir/src/position_talker.cpp.o"
+  "CMakeFiles/position_talker.dir/src/position_talker.cpp.o.d"
   "position_talker"
   "position_talker.pdb"
 )

@@ -6,13 +6,15 @@
 #include "tf2_ros/static_transform_broadcaster.h"
 
 
-class StaticFramePublisher : public rclcpp::Node
+class ConstBr : public rclcpp::Node
 {
 public:
 
   std::string panda_link_name = "panda_link0";
   std::string camera_link_name = "camera_base";
-  
+
+  // define transformation here
+  // note: TF does translation before rotation
   double dx = 0.7;
   double dy = 0.0;
   double dz = 0.0;
@@ -21,7 +23,7 @@ public:
   double ry = 0.0;
   double rz = 3.14;
 
-  explicit StaticFramePublisher()
+  explicit ConstBr()
   : Node("const_br")
   {
     tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
@@ -67,7 +69,7 @@ int main(int argc, char * argv[])
 { 
   // initialize node and spin it
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<StaticFramePublisher>());
+  rclcpp::spin(std::make_shared<ConstBr>());
   rclcpp::shutdown();
   return 0;
 }

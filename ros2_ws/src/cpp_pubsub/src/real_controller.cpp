@@ -62,7 +62,6 @@ void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_
 ///// hard-coded trajectories /////
 void get_robot_control0(double t, std::vector<double>& vals);
 void get_robot_control1(double t, std::vector<double>& vals);
-void get_robot_control2(double t, std::vector<double>& vals);
 
 bool within_limits(std::vector<double>& vals);
 bool create_tree();
@@ -184,7 +183,6 @@ private:
       switch (traj_id) {
         case 0: get_robot_control0(t_param, robot_offset); break;
         case 1: get_robot_control1(t_param, robot_offset); break;
-        case 2: get_robot_control2(t_param, robot_offset); break;
       }
 
       // perform the convex combination of robot and human offsets
@@ -324,8 +322,9 @@ private:
 
 /////////////////////////////// robot control (trajectory following) functions ///////////////////////////////
 
-void get_robot_control0(double t, std::vector<double>& vals) {
-  // circle of radius 0.1m, parametrized in the range [0, 2pi]
+void get_robot_control0(double t, std::vector<double>& vals)
+{
+  // vertical circle of radius 0.1m, parametrized in the range [0, 2pi]
   double r = 0.1;
   double x = 0.0;
   double y = r * sin(t);
@@ -333,47 +332,44 @@ void get_robot_control0(double t, std::vector<double>& vals) {
   vals.at(0) = x;
   vals.at(1) = y;
   vals.at(2) = z;
-  // if recording hasn't started, move the robot to the desired starting position of the circle
-  if (t < 0.0 || t > 2*M_PI) {
+  // if recording hasn't started, move the robot to the desired starting position
+  if (t < 0.0) {
+    vals.at(0) = 0.00;
+    vals.at(1) = 0.00;
+    vals.at(2) = r;
+  }
+  // if recording has finished, keep the robot at the finishing position
+  if (t > 2*M_PI) {
     vals.at(0) = 0.00;
     vals.at(1) = 0.00;
     vals.at(2) = r;
   }
 }
 
-void get_robot_control1(double t, std::vector<double>& vals) {
-  // circle of radius 0.1m, parametrized in the range [0, 2pi]
+void get_robot_control1(double t, std::vector<double>& vals) 
+{
+  // horizontal circle of radius 0.1m, parametrized in the range [0, 2pi]
   double r = 0.1;
-  double x = 0.0;
+  double x = -r * cos(t);
   double y = r * sin(t);
-  double z = r * cos(t);
+  double z = 0.0;
   vals.at(0) = x;
   vals.at(1) = y;
   vals.at(2) = z;
-  // if recording hasn't started, move the robot to the desired starting position of the circle
-  if (t < 0.0 || t > 2*M_PI) {
-    vals.at(0) = 0.00;
+  // if recording hasn't started, move the robot to the desired starting position
+  if (t < 0.0) {
+    vals.at(0) = -r;
     vals.at(1) = 0.00;
-    vals.at(2) = r;
+    vals.at(2) = 0.00;
+  }
+  // if recording has finished, keep the robot at the finishing position
+  if (t > 2*M_PI) {
+    vals.at(0) = -r;
+    vals.at(1) = 0.00;
+    vals.at(2) = 0.00;
   }
 }
 
-void get_robot_control2(double t, std::vector<double>& vals) {
-  // circle of radius 0.1m, parametrized in the range [0, 2pi]
-  double r = 0.1;
-  double x = 0.0;
-  double y = r * sin(t);
-  double z = r * cos(t);
-  vals.at(0) = x;
-  vals.at(1) = y;
-  vals.at(2) = z;
-  // if recording hasn't started, move the robot to the desired starting position of the circle
-  if (t < 0.0 || t > 2*M_PI) {
-    vals.at(0) = 0.00;
-    vals.at(1) = 0.00;
-    vals.at(2) = r;
-  }
-}
 
 
 /////////////////////////////// my own ik function ///////////////////////////////

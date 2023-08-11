@@ -39,7 +39,7 @@ find_package(tutorial_interfaces REQUIRED)
 
 ############################################ CPP nodes ############################################
 
-add_executable(position_talker src/position_publisher.cpp)
+add_executable(position_talker src/position_talker.cpp)
 ament_target_dependencies(position_talker rclcpp tutorial_interfaces)
 target_link_libraries(position_talker /usr/local/lib/libdhd.so.3
                                       /usr/local/lib/libdhd.a
@@ -55,20 +55,21 @@ ament_target_dependencies(gazebo_controller rclcpp tutorial_interfaces std_msgs 
 add_executable(real_controller src/real_controller.cpp)
 ament_target_dependencies(real_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
 
-add_executable(marker_publisher src/marker_publisher.cpp)
-ament_target_dependencies(marker_publisher rclcpp geometry_msgs visualization_msgs)
-
 add_executable(const_br src/const_br.cpp)
 ament_target_dependencies(const_br geometry_msgs rclcpp tf2 tf2_ros)
+
+add_executable(marker_publisher src/marker_publisher.cpp)
+ament_target_dependencies(marker_publisher rclcpp geometry_msgs visualization_msgs)
 
 
 install(TARGETS
 
-  position_talker
   gazebo_controller
+
+  position_talker
   real_controller
-  marker_publisher
   const_br
+  marker_publisher
   
   DESTINATION lib/${PROJECT_NAME})
 
