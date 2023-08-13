@@ -61,7 +61,7 @@ def generate_launch_description():
             description='Participant ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
-            default_value='0',  
+            default_value='1',  
             description='Trajectory ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
@@ -80,14 +80,14 @@ def generate_launch_description():
                               }.items(),
         ),
 
+
+        ############################## THE FOLLOWING ARE MY OWN STUFF ##############################
+
         ### kinect_camera launch ### 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([PathJoinSubstitution(
-                [FindPackageShare('azure_kinect_ros_driver'), 'launch', 'driver.launch.py'])])
-        ),
-
-
-        ############################## THE FOLLOWING ARE MY OWN NODES ##############################
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource([PathJoinSubstitution(
+        #         [FindPackageShare('azure_kinect_ros_driver'), 'launch', 'driver.launch.py'])])
+        # ),
 
         # joint trajectory controller
         Node(
@@ -98,25 +98,25 @@ def generate_launch_description():
         ),
 
         # publish camera frame [need camera to be connected]
-        Node(
-            package='cpp_pubsub',
-            executable='const_br',
-            name='const_br'
-        ),
-
-        # activate Falcon node [need Falcon to be connected]
         # Node(
         #     package='cpp_pubsub',
-        #     executable='position_talker',
-        #     parameters=[
-        #         {participant_parameter_name: participant},
-        #         {trajectory_parameter_name: trajectory},
-        #         {autonomy_parameter_name: autonomy}
-        #     ],
-        #     output='screen',
-        #     emulate_tty=True,
-        #     name='position_talker'
+        #     executable='const_br',
+        #     name='const_br'
         # ),
+
+        # activate Falcon node [need Falcon to be connected]
+        Node(
+            package='cpp_pubsub',
+            executable='position_talker',
+            parameters=[
+                {participant_parameter_name: participant},
+                {trajectory_parameter_name: trajectory},
+                {autonomy_parameter_name: autonomy}
+            ],
+            output='screen',
+            emulate_tty=True,
+            name='position_talker'
+        ),
 
         # marker publisher node
         Node(
@@ -143,20 +143,6 @@ def generate_launch_description():
         #     ],
         #     output='screen',
         #     emulate_tty=True
-        # ),
-
-        # # real robot controller node [need position_talker to be running]
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='real_controller',
-        #     parameters=[
-        #         {participant_parameter_name: participant},
-        #         {trajectory_parameter_name: trajectory},
-        #         {autonomy_parameter_name: autonomy}
-        #     ],
-        #     output='screen',
-        #     emulate_tty=True,
-        #     name='real_controller'
-        # ),
+        # )
 
     ])

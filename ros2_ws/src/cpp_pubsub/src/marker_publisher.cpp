@@ -8,10 +8,13 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 
+#include "tutorial_interfaces/msg/falconpos.hpp"
+
 using namespace std::chrono_literals;
 
 
-/////////  functions to plot reference trajectory  /////////
+/////////  functions to show markers in Rviz  /////////
+void generate_tcp_marker(visualization_msgs::msg::Marker &traj_marker);
 void generate_marker0(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
 void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
 
@@ -30,6 +33,7 @@ class MarkerPublisher : public rclcpp::Node
     std::vector<double> origin {0.4559, 0.0, 0.3846};
     const int max_points = 200;
 
+
     MarkerPublisher()
     : Node("marker_publisher")
     { 
@@ -45,9 +49,14 @@ class MarkerPublisher : public rclcpp::Node
       auto_id = std::stoi(params.at(2).value_to_string().c_str());
       print_params();
 
+      switch (traj_id) {
+        case 0: generate_marker0(traj_marker_, origin, max_points); break;
+        case 1: generate_marker1(traj_marker_, origin, max_points); break;
+      }
+
       // create the marker publisher
       marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("visualization_marker", 10);
-      marker_timer_ = this->create_wall_timer(1000ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 1 Hz
+      marker_timer_ = this->create_wall_timer(50ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 20 Hz
     }
 
 
@@ -55,16 +64,11 @@ class MarkerPublisher : public rclcpp::Node
 
     void marker_callback()
     { 
-      auto traj_marker = visualization_msgs::msg::Marker();
+      marker_pub_->publish(traj_marker_);    // this is a continuous line, good!
 
-      switch (traj_id) {
-        case 0: generate_marker0(traj_marker, origin, max_points); break;
-        case 1: generate_marker1(traj_marker, origin, max_points); break;
-      }
-
-      marker_pub_->publish(traj_marker);    // this is a continuous line, good!
+      generate_tcp_marker(tcp_marker_);
+      marker_pub_->publish(tcp_marker_);    // this is a sphere (point), good!
     }
-
 
     void print_params() {
       for (unsigned int i=0; i<10; i++) std::cout << "\n";
@@ -77,7 +81,37 @@ class MarkerPublisher : public rclcpp::Node
 
     rclcpp::TimerBase::SharedPtr marker_timer_;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+    rclcpp::Subscription<tutorial_interfaces::msg::Falconpos>::SharedPtr tcp_pos_sub_;
+    visualization_msgs::msg::Marker traj_marker_;
+    visualization_msgs::msg::Marker tcp_marker_;
 };
+
+
+/////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE TRAJECTORY MARKERS ///////////////////////////////////
+void generate_tcp_marker(visualization_msgs::msg::Marker &traj_marker) 
+{
+  // fill-in the traj_marker message
+  traj_marker.header.frame_id = "/panda_hand_tcp";
+  traj_marker.header.stamp = rclcpp::Clock().now();
+  traj_marker.ns = "marker_publisher";
+  traj_marker.action = visualization_msgs::msg::Marker::ADD;
+  traj_marker.id = 20;
+  traj_marker.type = visualization_msgs::msg::Marker::SPHERE;
+
+  // diameters of the sphere in x, y, z directions [cm]
+  traj_marker.scale.x = 0.02;
+  traj_marker.scale.y = 0.02;
+  traj_marker.scale.z = 0.02;
+
+  // Line strip is blue
+  traj_marker.color.b = 0.0;
+  traj_marker.color.a = 1.0;
+  
+  // zero offset from the panda tcp link frame
+  traj_marker.pose.position.x = 0.0;
+  traj_marker.pose.position.y = 0.0;
+  traj_marker.pose.position.z = 0.0;
+}
 
 
 /////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE TRAJECTORY MARKERS ///////////////////////////////////

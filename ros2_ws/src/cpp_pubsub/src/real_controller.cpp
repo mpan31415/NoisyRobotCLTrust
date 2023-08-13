@@ -96,7 +96,7 @@ public:
   bool control = false;
   
   const double mapping_ratio = 2.0;    /////// this ratio is {end-effector movement} / {Falcon movement}
-  const int control_freq = 20;   // the rate at which the "controller_publisher" function is called in [Hz]
+  const int control_freq = 25;   // the rate at which the "controller_publisher" function is called in [Hz]
   const double latency = 2.0;  // this is the artificial latency introduced into the joint points published
 
   // used to initially smoothly incorporate the Falcon offset
@@ -114,7 +114,8 @@ public:
   double az = 0.0;
 
   // trajectory recording
-  const int max_points = 200;
+  const int traj_duration = 10;   // in [seconds]
+  int max_points = control_freq * traj_duration;
   int num_points = 0;
   bool record_flag = false;
 
@@ -145,7 +146,7 @@ public:
 
     // joint controller publisher & timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
-    controller_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::controller_publisher, this));    // controls at 20 Hz 
+    controller_timer_ = this->create_wall_timer(40ms, std::bind(&RealController::controller_publisher, this));    // controls at 25 Hz 
     ////////////////// NOTE: the controller frequency should be kept quite low (20 Hz seems to be perfect) //////////////////
 
     // tcp position publisher & timer
@@ -196,7 +197,7 @@ private:
 
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
-      if (count <= max_count) w = pow((double)count / max_count, 2.0);  // use quadratic increase to make it smoother
+      if (count <= max_count) w = pow((double)count / max_count, 4.0);  // use quartic increase to make it smoother
       std::cout << "The current count is " << count << std::endl;
       std::cout << "The current weight is " << w << std::endl;
       for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);

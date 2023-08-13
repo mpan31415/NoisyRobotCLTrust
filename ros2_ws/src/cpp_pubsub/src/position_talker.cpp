@@ -38,7 +38,7 @@ public:
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
-  double K[3] {100.0, 100.0, 500.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
+  double K[3] {200.0, 70.0, 70.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
   double C[3] {5.0, 5.0, 5.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
   int choice;
 
@@ -109,7 +109,7 @@ private:
     message.y = p[1] * 100;
     message.z = p[2] * 100;
 
-    // RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
     // This allows in-line printing
     // for (int i=0; i<3; i++) printf ("p[%d] = %03f, ", i, p[i]*100);
     // printf ("          \r");
@@ -139,17 +139,17 @@ private:
         reset = false;
 
         // restore the K and C gain vectors to initial values
-        K[0] = 100.0; K[1] = 100.0; K[2] = 500.0;
+        K[0] = 200.0; K[1] = 70.0; K[2] = 70.0;
         C[0] = 5.0;   C[1] = 5.0;   C[2] = 5.0;
       }
     }
 
     count++;
     if (count > count_thres1) {
-      K[0] = 1000.0; K[1] = 1000.0; K[2] = 1000.0;
+      K[0] = 700.0; K[1] = 400.0; K[2] = 400.0;
     }
     if (count > count_thres2) {
-      K[0] = 2000.0; K[1] = 2000.0; K[2] = 2000.0;
+      K[0] = 2000.0; K[1] = 1500.0; K[2] = 1500.0;
     }
 
   }

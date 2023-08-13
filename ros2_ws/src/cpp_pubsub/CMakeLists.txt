@@ -59,7 +59,7 @@ add_executable(const_br src/const_br.cpp)
 ament_target_dependencies(const_br geometry_msgs rclcpp tf2 tf2_ros)
 
 add_executable(marker_publisher src/marker_publisher.cpp)
-ament_target_dependencies(marker_publisher rclcpp geometry_msgs visualization_msgs)
+ament_target_dependencies(marker_publisher rclcpp tutorial_interfaces geometry_msgs visualization_msgs)
 
 
 install(TARGETS

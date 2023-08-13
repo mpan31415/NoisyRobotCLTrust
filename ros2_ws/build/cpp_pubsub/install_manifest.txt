@@ -13,6 +13,7 @@
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub/__init__.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/lib/cpp_pubsub/traj_recorder.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/launch/real.launch.py
+/home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/launch/controller.launch.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/cpp_pubsub/launch/gazebo.launch.py
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/ament_index/resource_index/package_run_dependencies/cpp_pubsub
 /home/michael/HRI/ros2_ws/install/cpp_pubsub/share/ament_index/resource_index/parent_prefix_path/cpp_pubsub
