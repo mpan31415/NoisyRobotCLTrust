@@ -99,12 +99,12 @@ void generate_tcp_marker(visualization_msgs::msg::Marker &traj_marker)
   traj_marker.type = visualization_msgs::msg::Marker::SPHERE;
 
   // diameters of the sphere in x, y, z directions [cm]
-  traj_marker.scale.x = 0.02;
-  traj_marker.scale.y = 0.02;
-  traj_marker.scale.z = 0.02;
+  traj_marker.scale.x = 0.03;
+  traj_marker.scale.y = 0.03;
+  traj_marker.scale.z = 0.03;
 
-  // Line strip is blue
-  traj_marker.color.b = 0.0;
+  // sphere is red
+  traj_marker.color.r = 245.0;
   traj_marker.color.a = 1.0;
   
   // zero offset from the panda tcp link frame

@@ -25,7 +25,7 @@ def generate_launch_description():
             description='Participant ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
-            default_value='1',  
+            default_value='0',  
             description='Trajectory ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,

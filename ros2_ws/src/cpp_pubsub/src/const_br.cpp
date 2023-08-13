@@ -13,17 +13,16 @@ public:
   std::string panda_link_name = "panda_link0";
   std::string camera_link_name = "camera_base";
 
-  // define transformation here
+  // define transformation values
   // note: TF does translation before rotation
-  double dx = 0.7;
-  double dy = 0.0;
-  double dz = 0.0;
+  double dx = 1.22;
+  double dy = 0.6;
+  double dz = 1.15;
+  double rx = deg2rad(183);
+  double ry = deg2rad(30);
+  double rz = deg2rad(212);
 
-  double rx = 0.0;
-  double ry = 0.0;
-  double rz = 3.14;
-
-  explicit ConstBr()
+  ConstBr()
   : Node("const_br")
   {
     tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
@@ -57,6 +56,10 @@ private:
     t.transform.rotation.w = q.w();
 
     tf_static_broadcaster_->sendTransform(t);
+  }
+
+  double deg2rad(double deg) {
+    return (deg / 180) * M_PI;
   }
 
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;

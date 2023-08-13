@@ -61,12 +61,13 @@ def generate_launch_description():
             description='Participant ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
-            default_value='1',  
+            default_value='0',  
             description='Trajectory ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
             default_value='0',  
             description='Autonomy ID parameter'),
+
 
         ### franka_bringup launch ###
         IncludeLaunchDescription(
@@ -83,12 +84,6 @@ def generate_launch_description():
 
         ############################## THE FOLLOWING ARE MY OWN STUFF ##############################
 
-        ### kinect_camera launch ### 
-        # IncludeLaunchDescription(
-        #     PythonLaunchDescriptionSource([PathJoinSubstitution(
-        #         [FindPackageShare('azure_kinect_ros_driver'), 'launch', 'driver.launch.py'])])
-        # ),
-
         # joint trajectory controller
         Node(
             package='controller_manager',
@@ -97,12 +92,11 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # publish camera frame [need camera to be connected]
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='const_br',
-        #     name='const_br'
-        # ),
+        ### kinect_camera launch ### 
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([PathJoinSubstitution(
+                [FindPackageShare('azure_kinect_ros_driver'), 'launch', 'driver.launch.py'])])
+        ),
 
         # activate Falcon node [need Falcon to be connected]
         Node(
@@ -144,5 +138,12 @@ def generate_launch_description():
         #     output='screen',
         #     emulate_tty=True
         # )
+
+        # publish camera frame [need camera to be connected]
+        Node(
+            package='cpp_pubsub',
+            executable='const_br',
+            name='const_br'
+        ),
 
     ])
