@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from math import sin, cos
 
+import os
+
 import rclpy
 from rclpy.node import Node
 
@@ -11,6 +13,7 @@ from tutorial_interfaces.msg import Falconpos
 from std_msgs.msg import Bool
 
 from data_logger import DataLogger
+from data_plotter import DataPlotter
 
 
 FALCON_MAX_OFFSET = 0.07   # this is 7 [cm]
@@ -20,7 +23,9 @@ MAPPING_RATIO = 2.0
 
 NUM_POINTS = 200
 
-CSV_DIR = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/"
+TRAJ_PLOTS_DIR = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/traj_plots/"
+
+TRAJ_PLOT_FILE_NAME = "control00"
 
 
 
@@ -57,21 +62,15 @@ class TrajRecorder(Node):
         self.record_flag_sub = self.create_subscription(Bool, 'record', self.record_flag_callback, 10)
         self.record_flag_sub  # prevent unused variable warning
 
-        # flags to control data recording & plotting
         self.record = False
         self.plot = False
         
-        # data points of the trajectory
         self.xs = []
         self.ys = []
         self.zs = []
 
-        # plotting bounds
         self.lower_bounds = [(ORIGIN[i] - MAPPING_RATIO * FALCON_MAX_OFFSET) for i in range(3)]
         self.upper_bounds = [(ORIGIN[i] + MAPPING_RATIO * FALCON_MAX_OFFSET) for i in range(3)]
-
-        # file name of the csv sheet
-        self.csv_dir = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/part" + str(self.part_id) + "/"
 
 
     ##############################################################################
@@ -90,15 +89,13 @@ class TrajRecorder(Node):
 
     ##############################################################################
     def record_flag_callback(self, msg):
+
         self.record = msg.data
 
 
     ##############################################################################
     def write_to_csv(self):
-
-        dl = DataLogger(self.csv_dir, self.part_id, self.traj_id, self.auto_id, self.xs, self.ys, self.zs)
-        dl.write_header()
-        dl.log_data()
+        None
 
 
     ##############################################################################
@@ -119,6 +116,11 @@ class TrajRecorder(Node):
                 self.plot_reference1()
 
         self.ax.legend()
+
+        # saving the figure before I show it (is required)
+        plt.savefig(TRAJ_PLOTS_DIR + TRAJ_PLOT_FILE_NAME + "_part" + self.part_id + ".png")
+
+        plt.show()
 
 
     ##############################################################################
