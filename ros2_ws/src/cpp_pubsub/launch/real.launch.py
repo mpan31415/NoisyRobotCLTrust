@@ -92,11 +92,19 @@ def generate_launch_description():
             output='screen',
         ),
 
+        # test controller
+        # Node(
+        #     package='controller_manager',
+        #     executable='spawner',
+        #     arguments=['test_controller'],
+        #     output='screen',
+        # ),
+
         ### kinect_camera launch ### 
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([PathJoinSubstitution(
-                [FindPackageShare('azure_kinect_ros_driver'), 'launch', 'driver.launch.py'])])
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource([PathJoinSubstitution(
+        #         [FindPackageShare('azure_kinect_ros_driver'), 'launch', 'driver.launch.py'])])
+        # ),
 
         # activate Falcon node [need Falcon to be connected]
         Node(
@@ -140,10 +148,10 @@ def generate_launch_description():
         # )
 
         # publish camera frame [need camera to be connected]
-        Node(
-            package='cpp_pubsub',
-            executable='const_br',
-            name='const_br'
-        ),
+        # Node(
+        #     package='cpp_pubsub',
+        #     executable='const_br',
+        #     name='const_br'
+        # ),
 
     ])

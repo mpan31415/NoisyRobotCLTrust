@@ -50,6 +50,8 @@ public:
   // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
   // positive axes directions are {out, right, up}
 
+  const bool logging = false;
+
 
   PositionTalker(int a_choice)
   : Node("position_talker")
@@ -109,7 +111,9 @@ private:
     message.y = p[1] * 100;
     message.z = p[2] * 100;
 
-    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    if (logging) {
+      RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    }
     // This allows in-line printing
     // for (int i=0; i<3; i++) printf ("p[%d] = %03f, ", i, p[i]*100);
     // printf ("          \r");

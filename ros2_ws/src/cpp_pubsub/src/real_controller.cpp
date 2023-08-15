@@ -25,6 +25,9 @@
 #include <kdl/jntarray.hpp>
 
 
+// #include "../../../../../project/franka_ws/src/franka_ros2/franka_example_controllers/src/my_global_variables.cpp"
+
+
 using namespace std::chrono_literals;
 
 
@@ -48,13 +51,23 @@ std::vector<double> tcp_pos {0.3069, 0.0, 0.4853};   // initialized the same as 
 
 //////// global dictionaries ////////
 std::vector< std::vector<double> > alphas_dict {
-  {0.0, 0.0, 0.0},
-  {0.2, 0.2, 0.2},
-  {0.4, 0.4, 0.4},
-  {0.6, 0.6, 0.6},
-  {0.8, 0.8, 0.8},
-  {1.0, 1.0, 1.0}
+  {0.0, 0.0, 0.0},  // 0
+  {0.2, 0.2, 0.2},  // 1
+  {0.4, 0.4, 0.4},  // 2
+  {0.6, 0.6, 0.6},  // 3
+  {0.8, 0.8, 0.8},  // 4
+  {1.0, 1.0, 1.0}   // 5
 };
+
+
+//////// global variables from the external file ////////
+// extern double q1;
+// extern double q2;
+// extern double q3;
+// extern double q4;
+// extern double q5;
+// extern double q6;
+// extern double q7;
 
 
 /////////////////// function declarations ///////////////////
@@ -99,6 +112,7 @@ public:
   const double mapping_ratio = 2.0;    /////// this ratio is {end-effector movement} / {Falcon movement}
   const int control_freq = 25;   // the rate at which the "controller_publisher" function is called in [Hz]
   const double latency = 2.0;  // this is the artificial latency introduced into the joint points published
+  const int tcp_pub_frequency = 20;   // in [Hz]
 
   // used to initially smoothly incorporate the Falcon offset
   const int smoothing_time = 5;   /// smoothing time in [seconds]
@@ -116,7 +130,7 @@ public:
 
   // trajectory recording
   const int traj_duration = 10;   // in [seconds]
-  int max_points = control_freq * traj_duration;
+  int max_points = tcp_pub_frequency * traj_duration;
   int num_points = 0;
   bool record_flag = false;
 
@@ -148,7 +162,7 @@ public:
     // joint controller publisher & timer
     controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
     controller_timer_ = this->create_wall_timer(40ms, std::bind(&RealController::controller_publisher, this));    // controls at 25 Hz 
-    ////////////////// NOTE: the controller frequency should be kept quite low (20 Hz seems to be perfect) //////////////////
+    ////////////////// NOTE: the controller frequency should be kept quite low (100 Hz seems to be perfect) //////////////////
 
     // tcp position publisher & timer
     tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
@@ -198,7 +212,7 @@ private:
 
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
-      if (count <= max_count) w = pow((double)count / max_count, 4.0);  // use quartic increase to make it smoother
+      if (count <= max_count) w = pow((double)count / max_count, 3.0);  // use cubic increase to make it smoother
       std::cout << "The current count is " << count << std::endl;
       std::cout << "The current weight is " << w << std::endl;
       for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);
@@ -208,6 +222,18 @@ private:
         std::cout << "--------\nThese violate the joint limits of the Panda arm, shutting down now !!!\n---------" << std::endl;
         rclcpp::shutdown();
       }
+
+
+      ///////// write it to the global joint values /////////
+      // q1 = message_joint_vals.at(0);
+      // q2 = message_joint_vals.at(1);
+      // q3 = message_joint_vals.at(2);
+      // q4 = message_joint_vals.at(3);
+      // q5 = message_joint_vals.at(4);
+      // q6 = message_joint_vals.at(5);
+      // q7 = message_joint_vals.at(6);
+
+      // std::cout << "The global q values are " <<q1<<"  "<<q2<<"  "<<q3<<"  "<<q4<<"  "<<q5<<"  "<<q6<<"  "<<q7<< std::endl;
 
       
       ///////// prepare the trajectory message, introducing artificial latency /////////
@@ -309,7 +335,7 @@ private:
   rclcpp::TimerBase::SharedPtr controller_timer_;
 
   rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr tcp_pos_pub_;
-  rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
+  // rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
 
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr record_flag_pub_;
   rclcpp::TimerBase::SharedPtr record_flag_timer_;
