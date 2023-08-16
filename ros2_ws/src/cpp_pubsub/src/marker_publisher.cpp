@@ -17,6 +17,10 @@ using namespace std::chrono_literals;
 void generate_tcp_marker(visualization_msgs::msg::Marker &traj_marker);
 void generate_marker0(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
 void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
+void generate_marker2(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points);
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
 
 
 class MarkerPublisher : public rclcpp::Node
@@ -52,6 +56,7 @@ class MarkerPublisher : public rclcpp::Node
       switch (traj_id) {
         case 0: generate_marker0(traj_marker_, origin, max_points); break;
         case 1: generate_marker1(traj_marker_, origin, max_points); break;
+        case 2: generate_marker2(traj_marker_, origin, max_points); break;
       }
 
       // create the marker publisher
@@ -186,6 +191,80 @@ void generate_marker1(visualization_msgs::msg::Marker &traj_marker, std::vector<
     p.z = z;
 
     traj_marker.points.push_back(p);
+  }
+}
+
+void generate_marker2(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points)
+{
+  double r = 0.1;
+
+  // fill-in the traj_marker message
+  traj_marker.header.frame_id = "/panda_link0";
+  traj_marker.header.stamp = rclcpp::Clock().now();
+  traj_marker.ns = "marker_publisher";
+  traj_marker.action = visualization_msgs::msg::Marker::ADD;
+  traj_marker.id = 0;
+  traj_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
+
+  // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
+  traj_marker.scale.x = 0.02;  // make this 2 cm
+
+  // Line strip is blue
+  traj_marker.color.b = 1.0;
+  traj_marker.color.a = 1.0;
+
+  // get rotation matrix
+  std::vector<std::vector<double>> T {{0,0,0},{0,0,0},{0,0,0}};
+  get_rotation_matrix(2, 45, T);
+
+  std::vector<double> pre_point {0,0,0};
+  std::vector<double> post_point {0,0,0};
+
+  // Create the vertices for the points and lines
+  for (int count=0; count<=max_points; count++) {
+
+    double t = (double) count / max_points * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
+
+    double x = -r * cos(t);
+    double y = r * sin(t);
+    double z = 0.0;
+
+    pre_point = {x, y, z};
+    matrix_mult_vector(T, pre_point, post_point);
+
+    geometry_msgs::msg::Point p;
+    p.x = post_point.at(0) + origin.at(0);
+    p.y = post_point.at(1) + origin.at(1);
+    p.z = post_point.at(2) + origin.at(2);
+
+    traj_marker.points.push_back(p);
+  }
+}
+
+
+
+/////////////////////////// util functions ///////////////////////////
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T)
+{    
+  double th = angle / 180 * M_PI;
+  switch (axis) {
+      case 1: T.at(0) = {1,0,0}; T.at(1) = {0,cos(th),-sin(th)}; T.at(2) = {0,sin(th),cos(th)}; break;
+      case 2: T.at(0) = {cos(th),0,sin(th)}; T.at(1) = {0,1,0}; T.at(2) = {-sin(th),0,cos(th)}; break;
+      case 3: T.at(0) = {cos(th),-sin(th),0}; T.at(1) = {sin(th),cos(th),0}; T.at(2) = {0,0,1}; break;
+  }
+}
+
+
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result) 
+{   
+  for (size_t i=0; i<mat.size(); i++) {
+      auto row = mat.at(i);
+      double sum {0};
+      for (size_t j=0; j<row.size(); j++) {
+          sum += row.at(j) * vec.at(j);
+      }
+      result.at(i) = sum;
   }
 }
 

@@ -65,7 +65,7 @@ def generate_launch_description():
             description='Trajectory ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
-            default_value='0',  
+            default_value='5',  
             description='Autonomy ID parameter'),
 
 
@@ -85,20 +85,20 @@ def generate_launch_description():
         ############################## THE FOLLOWING ARE MY OWN STUFF ##############################
 
         # joint trajectory controller
-        Node(
-            package='controller_manager',
-            executable='spawner',
-            arguments=['joint_trajectory_controller'],
-            output='screen',
-        ),
-
-        # test controller
         # Node(
         #     package='controller_manager',
         #     executable='spawner',
-        #     arguments=['test_controller'],
+        #     arguments=['joint_trajectory_controller'],
         #     output='screen',
         # ),
+
+        # test controller
+        Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['test_controller'],
+            output='screen',
+        ),
 
         ### kinect_camera launch ### 
         # IncludeLaunchDescription(

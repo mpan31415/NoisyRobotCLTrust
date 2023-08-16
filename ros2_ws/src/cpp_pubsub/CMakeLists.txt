@@ -71,7 +71,9 @@ install(TARGETS
   const_br
   marker_publisher
   
-  DESTINATION lib/${PROJECT_NAME})
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 
 
 

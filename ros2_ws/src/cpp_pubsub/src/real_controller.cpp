@@ -25,9 +25,6 @@
 #include <kdl/jntarray.hpp>
 
 
-// #include "../../../../../project/franka_ws/src/franka_ros2/franka_example_controllers/src/my_global_variables.cpp"
-
-
 using namespace std::chrono_literals;
 
 
@@ -60,16 +57,6 @@ std::vector< std::vector<double> > alphas_dict {
 };
 
 
-//////// global variables from the external file ////////
-// extern double q1;
-// extern double q2;
-// extern double q3;
-// extern double q4;
-// extern double q5;
-// extern double q6;
-// extern double q7;
-
-
 /////////////////// function declarations ///////////////////
 void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_vals, std::vector<double>& res_vals);
 
@@ -83,6 +70,9 @@ void get_chain();
 
 void print_joint_vals(std::vector<double>& joint_vals);
 
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
 
 
 /////////////// DEFINITION OF NODE CLASS //////////////
@@ -137,6 +127,10 @@ public:
   // for robot trajectory following
   double t_param = 0.0;
 
+  // for transformations
+  std::vector<std::vector<double>> T {{0,0,0}, {0,0,0}, {0,0,0}};
+  std::vector<double> pre_point {0, 0, 0};
+
 
   ////////////////////////////////////////////////////////////////////////
   RealController()
@@ -182,6 +176,11 @@ public:
     if (!create_tree()) rclcpp::shutdown();
     get_chain();
 
+    // get the correct transformation for the given trajectory 
+    switch (traj_id) {
+      case 2: get_rotation_matrix(2, 45, T); break;
+    }
+
   }
 
 private:
@@ -197,8 +196,9 @@ private:
       // get the robot control offset in Cartesian space (calling the corresponding function of the traj_id)
       t_param = (double) (count - max_count) / max_points * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
       switch (traj_id) {
-        case 0: get_robot_control0(t_param, robot_offset); break;
-        case 1: get_robot_control1(t_param, robot_offset); break;
+        case 0: get_robot_control0(t_param); break;
+        case 1: get_robot_control1(t_param); break;
+        case 2: get_robot_control2(t_param); break;
       }
 
       // perform the convex combination of robot and human offsets
@@ -222,18 +222,6 @@ private:
         std::cout << "--------\nThese violate the joint limits of the Panda arm, shutting down now !!!\n---------" << std::endl;
         rclcpp::shutdown();
       }
-
-
-      ///////// write it to the global joint values /////////
-      // q1 = message_joint_vals.at(0);
-      // q2 = message_joint_vals.at(1);
-      // q3 = message_joint_vals.at(2);
-      // q4 = message_joint_vals.at(3);
-      // q5 = message_joint_vals.at(4);
-      // q6 = message_joint_vals.at(5);
-      // q7 = message_joint_vals.at(6);
-
-      // std::cout << "The global q values are " <<q1<<"  "<<q2<<"  "<<q3<<"  "<<q4<<"  "<<q5<<"  "<<q6<<"  "<<q7<< std::endl;
 
       
       ///////// prepare the trajectory message, introducing artificial latency /////////
@@ -272,6 +260,79 @@ private:
         std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
         }
       }
+    }
+  }
+
+  /////////////////////////////// robot control (trajectory following) functions ///////////////////////////////
+
+  void get_robot_control0(double t)
+  {
+    // vertical circle of radius 0.1m, parametrized in the range [0, 2pi]
+    double r = 0.1;
+    double x = 0.0;
+    double y = r * sin(t);
+    double z = r * cos(t);
+    robot_offset.at(0) = x;
+    robot_offset.at(1) = y;
+    robot_offset.at(2) = z;
+    // if recording hasn't started, move the robot to the desired starting position
+    if (t < 0.0) {
+      robot_offset.at(0) = 0.00;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = r;
+    }
+    // if recording has finished, keep the robot at the finishing position
+    if (t > 2*M_PI) {
+      robot_offset.at(0) = 0.00;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = r;
+    }
+  }
+
+  void get_robot_control1(double t) 
+  {
+    // horizontal circle of radius 0.1m, parametrized in the range [0, 2pi]
+    double r = 0.1;
+    double x = -r * cos(t);
+    double y = r * sin(t);
+    double z = 0.0;
+    robot_offset.at(0) = x;
+    robot_offset.at(1) = y;
+    robot_offset.at(2) = z;
+    // if recording hasn't started, move the robot to the desired starting position
+    if (t < 0.0) {
+      robot_offset.at(0) = -r;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = 0.00;
+    }
+    // if recording has finished, keep the robot at the finishing position
+    if (t > 2*M_PI) {
+      robot_offset.at(0) = -r;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = 0.00;
+    }
+  }
+
+  void get_robot_control2(double t) 
+  {
+    // horizontal circle of radius 0.1m, parametrized in the range [0, 2pi]
+    double r = 0.1;
+    double x = -r * cos(t);
+    double y = r * sin(t);
+    double z = 0.0;
+
+    pre_point = {x, y, z};
+    matrix_mult_vector(T, pre_point, robot_offset);
+
+    // if recording hasn't started, move the robot to the desired starting position
+    if (t < 0.0) {
+      pre_point = {-r, 0.0, 0.0};
+      matrix_mult_vector(T, pre_point, robot_offset);
+    }
+    // if recording has finished, keep the robot at the finishing position
+    if (t > 2*M_PI) {
+      pre_point = {-r, 0.0, 0.0};
+      matrix_mult_vector(T, pre_point, robot_offset);
     }
   }
 
@@ -348,53 +409,28 @@ private:
 
 
 
-/////////////////////////////// robot control (trajectory following) functions ///////////////////////////////
+/////////////////////////// util functions ///////////////////////////
 
-void get_robot_control0(double t, std::vector<double>& vals)
-{
-  // vertical circle of radius 0.1m, parametrized in the range [0, 2pi]
-  double r = 0.1;
-  double x = 0.0;
-  double y = r * sin(t);
-  double z = r * cos(t);
-  vals.at(0) = x;
-  vals.at(1) = y;
-  vals.at(2) = z;
-  // if recording hasn't started, move the robot to the desired starting position
-  if (t < 0.0) {
-    vals.at(0) = 0.00;
-    vals.at(1) = 0.00;
-    vals.at(2) = r;
-  }
-  // if recording has finished, keep the robot at the finishing position
-  if (t > 2*M_PI) {
-    vals.at(0) = 0.00;
-    vals.at(1) = 0.00;
-    vals.at(2) = r;
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T)
+{    
+  double th = angle / 180 * M_PI;
+  switch (axis) {
+      case 1: T.at(0) = {1,0,0}; T.at(1) = {0,cos(th),-sin(th)}; T.at(2) = {0,sin(th),cos(th)}; break;
+      case 2: T.at(0) = {cos(th),0,sin(th)}; T.at(1) = {0,1,0}; T.at(2) = {-sin(th),0,cos(th)}; break;
+      case 3: T.at(0) = {cos(th),-sin(th),0}; T.at(1) = {sin(th),cos(th),0}; T.at(2) = {0,0,1}; break;
   }
 }
 
-void get_robot_control1(double t, std::vector<double>& vals) 
-{
-  // horizontal circle of radius 0.1m, parametrized in the range [0, 2pi]
-  double r = 0.1;
-  double x = -r * cos(t);
-  double y = r * sin(t);
-  double z = 0.0;
-  vals.at(0) = x;
-  vals.at(1) = y;
-  vals.at(2) = z;
-  // if recording hasn't started, move the robot to the desired starting position
-  if (t < 0.0) {
-    vals.at(0) = -r;
-    vals.at(1) = 0.00;
-    vals.at(2) = 0.00;
-  }
-  // if recording has finished, keep the robot at the finishing position
-  if (t > 2*M_PI) {
-    vals.at(0) = -r;
-    vals.at(1) = 0.00;
-    vals.at(2) = 0.00;
+
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result) 
+{   
+  for (size_t i=0; i<mat.size(); i++) {
+      auto row = mat.at(i);
+      double sum {0};
+      for (size_t j=0; j<row.size(); j++) {
+          sum += row.at(j) * vec.at(j);
+      }
+      result.at(i) = sum;
   }
 }
 
