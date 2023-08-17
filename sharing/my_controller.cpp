@@ -55,12 +55,14 @@ controller_interface::return_type MyController::update(
 
   // std::cout << "\n\n update function \n\n" << std::endl;
 
+  bool got_message = false;
+  Vector7d q_desired = q_;
 
   /////////////////////////////// SUBSCRIBER SECTION ///////////////////////////////
 
-  rclcpp::WaitSet wait_set({}, std::vector<rclcpp::GuardCondition::SharedPtr>{guard_condition1});
-  wait_set.add_subscription(sub1);
-  auto wait_result = wait_set.wait(std::chrono::milliseconds(2));    //// this should be < (1000 / controller's update frequency)
+  rclcpp::WaitSet wait_set({}, std::vector<rclcpp::GuardCondition::SharedPtr>{guard_condition1_});
+  wait_set.add_subscription(sub1_);
+  auto wait_result = wait_set.wait(std::chrono::microseconds(wait_time_));    //// this should be <= (1000 / controller's update frequency)
 
   if (wait_result.kind() == rclcpp::WaitResultKind::Ready) {
     size_t subscriptions_num = wait_set.get_rcl_wait_set().size_of_subscriptions;
@@ -68,28 +70,28 @@ controller_interface::return_type MyController::update(
       if (wait_result.get_wait_set().get_rcl_wait_set().subscriptions[i]) {
         sensor_msgs::msg::JointState msg;
         rclcpp::MessageInfo msg_info;
-        if (sub1->take(msg, msg_info)) {
-
+        if (sub1_->take(msg, msg_info)) {
 
           ////// this is where I need to fill in //////
+          got_message = true;
+
           auto poses = msg.position;
-          for (size_t i=0; i<poses.size(); i++) std::cout << "    " << poses.at(i);
-          std::cout << "\n" << std::endl;
-            
+          for (int i=0; i<7; i++) q_desired(i) = poses.at(i);    /// copy into the Eigen vector "q_desired"
+
 
         } else {
-          RCLCPP_INFO(node->get_logger(), "subscription %zu: No message", i + 1);
+          RCLCPP_INFO(node_->get_logger(), "subscription %zu: No message", i + 1);
         }
       }
     }
   } else if (wait_result.kind() == rclcpp::WaitResultKind::Timeout) {
-    RCLCPP_INFO(node->get_logger(), "wait-set waiting failed with timeout");
+    RCLCPP_INFO(node_->get_logger(), "wait-set waiting failed with timeout");
   } else if (wait_result.kind() == rclcpp::WaitResultKind::Empty) {
-    RCLCPP_INFO(node->get_logger(), "wait-set waiting failed because wait-set is empty");
+    RCLCPP_INFO(node_->get_logger(), "wait-set waiting failed because wait-set is empty");
   }
 
-  wait_set.remove_guard_condition(guard_condition1);
-  wait_set.remove_subscription(sub1);
+  wait_set.remove_guard_condition(guard_condition1_);
+  wait_set.remove_subscription(sub1_);
 
 
 
@@ -97,22 +99,37 @@ controller_interface::return_type MyController::update(
   /////////////////////////////// FRANKA CONTROLLER SECTION ///////////////////////////////
 
   updateJointStates();
-  auto trajectory_time = this->get_node()->now() - start_time_;
-  auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
-  Vector7d q_desired = motion_generator_output.first;
-  bool finished = motion_generator_output.second;
-  if (not finished) {
+
+  if (got_message) {
+
+    // print the q_desired vector
+    for (int i=0; i<7; i++) std::cout << "    " << q_desired(i);
+    std::cout << "\n" << std::endl;
+
     const double kAlpha = 0.99;
     dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
-    Vector7d tau_d_calculated =
-        k_gains_.cwiseProduct(q_desired - q_) + d_gains_.cwiseProduct(-dq_filtered_);
-    for (int i = 0; i < 7; ++i) {
-      command_interfaces_[i].set_value(tau_d_calculated(i));
+    tau_d_calculated_ = k_gains_.cwiseProduct(q_desired - q_) + d_gains_.cwiseProduct(-dq_filtered_);
+    
+    withinLimits();
+
+    if (controlling_) {
+      for (int i = 0; i < 7; ++i) {
+        command_interfaces_[i].set_value(tau_d_calculated_(i));
+      }
+    } else {
+      for (int i = 0; i < 7; ++i) command_interfaces_[i].set_value(0);
     }
+
   } else {
-    for (auto& command_interface : command_interfaces_) {
-      command_interface.set_value(0);
+
+    if (controlling_) {
+      for (int i = 0; i < 7; ++i) {
+        command_interfaces_[i].set_value(tau_d_calculated_(i));
+      }
+    } else {
+      for (int i = 0; i < 7; ++i) command_interfaces_[i].set_value(0);
     }
+
   }
   return controller_interface::return_type::OK;
 }
@@ -123,15 +140,19 @@ CallbackReturn MyController::on_init() {
 
   std::cout << "\n\n on_init function \n\n" << std::endl;
 
-  q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
-
-
-
-  node = this->get_node();
+  ////////////////// my stuff //////////////////
+  node_ = this->get_node();
   auto do_nothing = [](sensor_msgs::msg::JointState::UniquePtr) {assert(false);};
-  sub1 = node->create_subscription<sensor_msgs::msg::JointState>("desired_joint_vals", 10, do_nothing);
-  guard_condition1 = std::make_shared<rclcpp::GuardCondition>();
-  
+  sub1_ = node_->create_subscription<sensor_msgs::msg::JointState>("desired_joint_vals", 10, do_nothing);
+  guard_condition1_ = std::make_shared<rclcpp::GuardCondition>();
+
+  torque_limits_ = {30, 30, 30, 30, 10, 10, 10};
+  controlling_ = true;
+
+  wait_time_ = 1500;    // [microseconds]     //// this should be <= (1000 / controller's update frequency) * 1000
+  for (int i = 0; i < 7; ++i) {
+    tau_d_calculated_(i) = 0;
+  }
 
 
   try {
@@ -189,14 +210,13 @@ CallbackReturn MyController::on_activate(
   std::cout << "\n\n on_activate function \n\n" << std::endl;
 
   updateJointStates();
-  motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_, q_goal_);
-  start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 void MyController::updateJointStates() {
+
   for (auto i = 0; i < num_joints; ++i) {
     const auto& position_interface = state_interfaces_.at(2 * i);
     const auto& velocity_interface = state_interfaces_.at(2 * i + 1);
@@ -208,6 +228,18 @@ void MyController::updateJointStates() {
     dq_(i) = velocity_interface.get_value();
   }
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+void MyController::withinLimits() {
+  for (int i=0; i<7; i++) {
+    if (tau_d_calculated_(i) > torque_limits_(i)) {
+      controlling_ = false;
+    }
+  }
+}
+
+
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
 // NOLINTNEXTLINE

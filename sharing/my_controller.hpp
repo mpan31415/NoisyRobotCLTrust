@@ -1,17 +1,3 @@
-// Copyright (c) 2021 Franka Emika GmbH
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #pragma once
 
 #include <memory>
@@ -44,22 +30,28 @@ class MyController : public controller_interface::ControllerInterface {
  private:
   std::string arm_id_;
   const int num_joints = 7;
+
   Vector7d q_;
-  Vector7d q_goal_;
   Vector7d dq_;
   Vector7d dq_filtered_;
+
   Vector7d k_gains_;
   Vector7d d_gains_;
-  rclcpp::Time start_time_;
-  std::unique_ptr<MotionGenerator> motion_generator_;
+
+  Vector7d torque_limits_;
+  bool controlling_;
 
 
-  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node;
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr sub1;
-  rclcpp::GuardCondition::SharedPtr guard_condition1;
+  std::shared_ptr<rclcpp_lifecycle::LifecycleNode> node_;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr sub1_;
+  rclcpp::GuardCondition::SharedPtr guard_condition1_;
+
+  int wait_time_;
+  Vector7d tau_d_calculated_;
   
 
-
   void updateJointStates();
+  void withinLimits();
+
 };
 }  // namespace franka_example_controllers
