@@ -65,7 +65,7 @@ def generate_launch_description():
             description='Trajectory ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
-            default_value='5',  
+            default_value='0',  
             description='Autonomy ID parameter'),
 
 
@@ -96,7 +96,7 @@ def generate_launch_description():
         Node(
             package='controller_manager',
             executable='spawner',
-            arguments=['test_controller'],
+            arguments=['my_controller'],
             output='screen',
         ),
 

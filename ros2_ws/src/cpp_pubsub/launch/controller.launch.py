@@ -29,7 +29,7 @@ def generate_launch_description():
             description='Trajectory ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
-            default_value='5',  
+            default_value='0',  
             description='Autonomy ID parameter'),
 
 
