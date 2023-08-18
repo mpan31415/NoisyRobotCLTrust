@@ -29,6 +29,7 @@ using namespace std::chrono_literals;
 
 
 /////////////////// global variables ///////////////////
+// const std::string urdf_path = "/home/michael/FOR_TESTING/panda.urdf";
 const std::string urdf_path = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/urdf/panda.urdf";
 const unsigned int n_joints = 7;
 
@@ -59,11 +60,16 @@ std::vector< std::vector<double> > alphas_dict {
 /////////////////// function declarations ///////////////////
 void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_vals, std::vector<double>& res_vals);
 
+///// hard-coded trajectories /////
+// void get_robot_control0(double t, std::vector<double>& vals);
+// void get_robot_control1(double t, std::vector<double>& vals);
+
 bool within_limits(std::vector<double>& vals);
 bool create_tree();
 void get_chain();
 
 void print_joint_vals(std::vector<double>& joint_vals);
+
 
 void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
 void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
@@ -76,12 +82,13 @@ class RealController : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"mapping_ratio", "part_id", "auto_id", "traj_id"};
-  double mapping_ratio {2.0};
+  std::vector<std::string> param_names = {"part_id", "traj_id", "auto_id"};
   int part_id {0};
-  int auto_id {0};
   int traj_id {0};
+  int auto_id {0};
   
+  // std::vector<double> origin {0.3059, 0.0, 0.4846}; //////// can change the task-space origin point! ////////
+  // std::vector<double> origin {0.4559, 0.0, 0.3346}; //////// can change the task-space origin point! ////////
   std::vector<double> origin {0.4559, 0.0, 0.3846}; //////// can change the task-space origin point! ////////
 
   std::vector<double> human_offset {0.0, 0.0, 0.0};
@@ -92,7 +99,9 @@ public:
   std::vector<double> message_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
   
+  const double mapping_ratio = 2.0;    /////// this ratio is {end-effector movement} / {Falcon movement}
   const int control_freq = 1000;   // the rate at which the "controller_publisher" function is called in [Hz]
+  const double latency = 2.0;  // this is the artificial latency introduced into the joint points published
   const int tcp_pub_frequency = 20;   // in [Hz]
 
   // used to initially smoothly incorporate the Falcon offset
@@ -102,7 +111,9 @@ public:
 
   double w = 0.0;  // this is the weight used for initial smoothing, which goes from 0 -> 1 as count goes from 0 -> max_smoothing_count
 
-  // alpha values = amount of HUMAN INPUT, in the range [0, 1]
+  // alpha values in {x, y, z} dimensions, used for convex combination of human and robot input
+  // alpha values correspond to the share of HUMAN INPUT
+  // they have to be in the range of [0, 1], and here, we are only initializing them
   double ax = 0.0;
   double ay = 0.0;
   double az = 0.0;
@@ -110,21 +121,15 @@ public:
   // trajectory recording
   const int traj_duration = 10;   // in [seconds]
   int max_recording_count = control_freq * traj_duration;
+  int recording_count = 0;
   bool record_flag = false;
-
-  const int max_traj_points = tcp_pub_frequency * traj_duration;
-  int traj_points_sent = 0;
 
   // for robot trajectory following
   double t_param = 0.0;
 
   // for transformations
-  std::vector<std::vector<double>> trans_matrix {{1,0,0}, {0,1,0}, {0,0,1}};   // initialized as the identity matrix
+  std::vector<std::vector<double>> T {{0,0,0}, {0,0,0}, {0,0,0}};
   std::vector<double> pre_point {0, 0, 0};
-
-  // for the spiral dimensions
-  double spiral_r = 0.0;
-  double spiral_h = 0.0;
 
 
   ////////////////////////////////////////////////////////////////////////
@@ -132,16 +137,15 @@ public:
   : Node("real_controller")
   { 
     // parameter stuff
-    this->declare_parameter(param_names.at(0), 2.0);
+    this->declare_parameter(param_names.at(0), 0);
     this->declare_parameter(param_names.at(1), 0);
     this->declare_parameter(param_names.at(2), 0);
-    this->declare_parameter(param_names.at(3), 0);
+    // this->declare_parameter(param_names.at(2), rclcpp::PARAMETER_INTEGER);
     
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
-    mapping_ratio = std::stoi(params.at(0).value_to_string().c_str());
-    part_id = std::stoi(params.at(1).value_to_string().c_str());
+    part_id = std::stoi(params.at(0).value_to_string().c_str());
+    traj_id = std::stoi(params.at(1).value_to_string().c_str());
     auto_id = std::stoi(params.at(2).value_to_string().c_str());
-    traj_id = std::stoi(params.at(3).value_to_string().c_str());
     print_params();
 
     // update {ax, ay, az} values using the parameter "auto_id"
@@ -149,19 +153,10 @@ public:
     ay = alphas_dict.at(auto_id).at(1);
     az = alphas_dict.at(auto_id).at(2);
 
-    // get the spiral dimensions & the corresponding transformation matrix
-    switch (traj_id) {
-      case 0: spiral_r = 0.1; spiral_h = 0.2; break;
-      case 1: get_rotation_matrix(1, 90, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
-      case 2: get_rotation_matrix(2, 90, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
-      case 3: get_rotation_matrix(1, 30, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
-      case 4: get_rotation_matrix(2, 30, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
-      case 5: get_rotation_matrix(1, 70, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
-    }
-
     // joint controller publisher & timer
+    // controller_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("joint_trajectory_controller/joint_trajectory", 10);
     controller_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("desired_joint_vals", 10);
-    controller_timer_ = this->create_wall_timer(1ms, std::bind(&RealController::controller_publisher, this));    // controls at 1000 Hz
+    controller_timer_ = this->create_wall_timer(1ms, std::bind(&RealController::controller_publisher, this));    // controls at 1000 Hz 
 
     // tcp position publisher & timer
     tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
@@ -169,7 +164,7 @@ public:
 
     // recording flag publisher & timer
     record_flag_pub_ = this->create_publisher<std_msgs::msg::Bool>("record", 10);
-    record_flag_timer_ = this->create_wall_timer(1ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 1000 Hz
+    record_flag_timer_ = this->create_wall_timer(2ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 500 Hz
 
     joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
@@ -180,6 +175,11 @@ public:
     //Create Panda tree and get its kinematic chain
     if (!create_tree()) rclcpp::shutdown();
     get_chain();
+
+    // get the correct transformation for the given trajectory 
+    switch (traj_id) {
+      case 2: get_rotation_matrix(2, 45, T); break;
+    }
 
   }
 
@@ -194,8 +194,12 @@ private:
       traj_message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
       // get the robot control offset in Cartesian space (calling the corresponding function of the traj_id)
-      t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // t_param is in the range [0, 2pi]
-      get_robot_control(t_param);      
+      t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
+      switch (traj_id) {
+        case 0: get_robot_control0(t_param); break;
+        case 1: get_robot_control1(t_param); break;
+        case 2: get_robot_control2(t_param); break;
+      }
 
       // perform the convex combination of robot and human offsets
       // also adding the origin and thus representing it as tcp_pos in the robot's base frame
@@ -219,17 +223,125 @@ private:
         rclcpp::shutdown();
       }
 
-      ///////// prepare and publish the desired_joint_vals message /////////
+      
+      ///////// prepare the trajectory message, introducing artificial latency /////////
+      // auto point = trajectory_msgs::msg::JointTrajectoryPoint();
+      // point.positions = message_joint_vals;
+      // point.time_from_start.nanosec = (int)(1000 / control_freq) * latency * 1000000;     //// => {milliseconds} * 1e6
+
+      // traj_message.points = {point};
+
+      // std::cout << "The joint values [MESSAGE] are ";
+      // print_joint_vals(message_joint_vals);
+      // controller_pub_->publish(traj_message);
+
+
+      ///////// prepare the desired_joint_vals message /////////
       auto q_desired = sensor_msgs::msg::JointState();
       q_desired.position = message_joint_vals;
       controller_pub_->publish(q_desired);
 
+
+
+
+
+      //////////////////////// NOW PUBLISH THE TCP_POS ////////////////////////
+      // // note: this is in meters
+      // auto tcp_message = tutorial_interfaces::msg::Falconpos();
+      // tcp_message.x = tcp_pos.at(0);
+      // tcp_message.y = tcp_pos.at(1);
+      // tcp_message.z = tcp_pos.at(2);
+
+      // // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
+      // tcp_pos_pub_->publish(tcp_message);
+
+
       // set the record flag as either true or false, depending on the number of trajectory points executed
-      if (count == max_smoothing_count && !record_flag && traj_points_sent == 0) {
+      if (count == max_smoothing_count && !record_flag && recording_count == 0) {
         record_flag = true;
         std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => TRUE =======================\n\n\n\n\n\n" << std::endl;
       }
+      if (record_flag) {
+        if (recording_count < max_recording_count) {
+          recording_count++;
+        } else {
+        record_flag = false;
+        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
+        }
+      }
+    }
+  }
 
+  /////////////////////////////// robot control (trajectory following) functions ///////////////////////////////
+
+  void get_robot_control0(double t)
+  {
+    // vertical circle of radius 0.1m, parametrized in the range [0, 2pi]
+    double r = 0.1;
+    double x = 0.0;
+    double y = r * sin(t);
+    double z = r * cos(t);
+    robot_offset.at(0) = x;
+    robot_offset.at(1) = y;
+    robot_offset.at(2) = z;
+    // if recording hasn't started, move the robot to the desired starting position
+    if (t < 0.0) {
+      robot_offset.at(0) = 0.00;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = r;
+    }
+    // if recording has finished, keep the robot at the finishing position
+    if (t > 2*M_PI) {
+      robot_offset.at(0) = 0.00;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = r;
+    }
+  }
+
+  void get_robot_control1(double t) 
+  {
+    // horizontal circle of radius 0.1m, parametrized in the range [0, 2pi]
+    double r = 0.1;
+    double x = -r * cos(t);
+    double y = r * sin(t);
+    double z = 0.0;
+    robot_offset.at(0) = x;
+    robot_offset.at(1) = y;
+    robot_offset.at(2) = z;
+    // if recording hasn't started, move the robot to the desired starting position
+    if (t < 0.0) {
+      robot_offset.at(0) = -r;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = 0.00;
+    }
+    // if recording has finished, keep the robot at the finishing position
+    if (t > 2*M_PI) {
+      robot_offset.at(0) = -r;
+      robot_offset.at(1) = 0.00;
+      robot_offset.at(2) = 0.00;
+    }
+  }
+
+  void get_robot_control2(double t) 
+  {
+    // horizontal circle of radius 0.1m, parametrized in the range [0, 2pi]
+    double r = 0.1;
+    double x = -r * cos(t);
+    double y = r * sin(t);
+    double z = 0.0;
+
+    pre_point = {x, y, z};
+    matrix_mult_vector(T, pre_point, robot_offset);
+
+    // if recording hasn't started, move the robot to the desired starting position
+    if (t < 0.0) {
+      pre_point = {-r, 0.0, 0.0};
+      matrix_mult_vector(T, pre_point, robot_offset);
+    }
+    // if recording has finished, keep the robot at the finishing position
+    if (t > 2*M_PI) {
+      pre_point = {-r, 0.0, 0.0};
+      matrix_mult_vector(T, pre_point, robot_offset);
     }
   }
 
@@ -242,13 +354,8 @@ private:
       message.x = tcp_pos.at(0);
       message.y = tcp_pos.at(1);
       message.z = tcp_pos.at(2);
-      tcp_pos_pub_->publish(message);
 
-      traj_points_sent++;
-      if (traj_points_sent == max_traj_points) {
-        record_flag = false;
-        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
-      }
+      tcp_pos_pub_->publish(message);
     }
   }
 
@@ -257,6 +364,8 @@ private:
   { 
     auto message = std_msgs::msg::Bool();
     message.data = record_flag;
+
+    // RCLCPP_INFO(this->get_logger(), "Publishing controller joint values");
     record_flag_pub_->publish(message);
   }
 
@@ -264,9 +373,12 @@ private:
   void joint_states_callback(const sensor_msgs::msg::JointState & msg)
   { 
     auto data = msg.position;
+
+    // write into our class variable for storing joint values
     for (unsigned int i=0; i<n_joints; i++) {
       curr_joint_vals.at(i) = data.at(i);
     }
+
     /// if this the first iteration, change the control flag and start partying!
     if (control == false) control = true;
   }
@@ -277,191 +389,20 @@ private:
     human_offset.at(0) = msg.x / 100 * mapping_ratio;
     human_offset.at(1) = msg.y / 100 * mapping_ratio;
     human_offset.at(2) = msg.z / 100 * mapping_ratio;
+    // std::cout << "x = " << human_offset.at(0) << ", " << "y = " << human_offset.at(1) << ", " << "z = " << human_offset.at(2) << std::endl;
   }
-
-  /////////////////////////////// robot control function ///////////////////////////////
-  void get_robot_control(double t) 
-  {
-    if (t < 0.0) {
-      pre_point = {0.0, spiral_r, -spiral_h/2};
-      matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-      return;
-    }
-    if (t > 2*M_PI) {
-      pre_point = {0.0, spiral_r, spiral_h/2};
-      matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-      return;
-    }
-    double x = spiral_r * sin(t*2);
-    double y = spiral_r * cos(t*2);
-    double z = -spiral_h/2 + t/(2*M_PI) * spiral_h;
-    pre_point = {x, y, z};
-    matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  }
-
-
-
-
-  // //////////////////////////////////////////////////////////////////////////////////////////////////
-  // /////////////////////////////// robot control functions - training ///////////////////////////////
-  // void get_robot_control_training(double t)
-  // { 
-  //   // spiral [no rotation]
-  //   double r = 0.1;
-  //   double h = 0.2;
-  //   // if recording hasn't started, move the robot to the desired starting position
-  //   if (t < 0.0) {
-  //     robot_offset.at(0) = 0.00;
-  //     robot_offset.at(1) = r;
-  //     robot_offset.at(2) = -h/2;
-  //     return;
-  //   }
-  //   // if recording has finished, keep the robot at the finishing position
-  //   if (t > 2*M_PI) {
-  //     robot_offset.at(0) = 0.00;
-  //     robot_offset.at(1) = r;
-  //     robot_offset.at(2) = h/2;
-  //     return;
-  //   }
-  //   // in the middle of recording, get the right position
-  //   double x = r * sin(t*2);
-  //   double y = r * cos(t*2);
-  //   double z = -h/2 + t/(2*M_PI) * h;
-  //   robot_offset.at(0) = x;
-  //   robot_offset.at(1) = y;
-  //   robot_offset.at(2) = z;
-  // }
-
-  // /////////////////////////////// robot control functions - traj 1 ///////////////////////////////
-  // void get_robot_control1(double t) 
-  // {
-  //   // vertical spiral [90 deg about x-axis]
-  //   double r = 0.1;
-  //   double h = 0.2;
-  //   if (t < 0.0) {
-  //     pre_point = {0.0, r, -h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   if (t > 2*M_PI) {
-  //     pre_point = {0.0, r, h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   double x = r * sin(t*2);
-  //   double y = r * cos(t*2);
-  //   double z = -h/2 + t/(2*M_PI) * h;
-  //   pre_point = {x, y, z};
-  //   matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  // }
-
-  // /////////////////////////////// robot control functions - traj 2 ///////////////////////////////
-  // void get_robot_control2(double t) 
-  // {
-  //   // vertical spiral [90 deg about x-axis]
-  //   double r = 0.1;
-  //   double h = 0.2;
-  //   if (t < 0.0) {
-  //     pre_point = {0.0, r, -h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   if (t > 2*M_PI) {
-  //     pre_point = {0.0, r, h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   double x = r * sin(t*2);
-  //   double y = r * cos(t*2);
-  //   double z = -h/2 + t/(2*M_PI) * h;
-  //   pre_point = {x, y, z};
-  //   matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  // }
-
-  // /////////////////////////////// robot control functions - traj 3 ///////////////////////////////
-  // void get_robot_control3(double t) 
-  // {
-  //   // vertical spiral [90 deg about x-axis]
-  //   double r = 0.1;
-  //   double h = 0.2;
-  //   if (t < 0.0) {
-  //     pre_point = {0.0, r, -h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   if (t > 2*M_PI) {
-  //     pre_point = {0.0, r, h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   double x = r * sin(t*2);
-  //   double y = r * cos(t*2);
-  //   double z = -h/2 + t/(2*M_PI) * h;
-  //   pre_point = {x, y, z};
-  //   matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  // }
-
-  // /////////////////////////////// robot control functions - traj 4 ///////////////////////////////
-  // void get_robot_control4(double t) 
-  // {
-  //   // vertical spiral [90 deg about x-axis]
-  //   double r = 0.1;
-  //   double h = 0.2;
-  //   if (t < 0.0) {
-  //     pre_point = {0.0, r, -h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   if (t > 2*M_PI) {
-  //     pre_point = {0.0, r, h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   double x = r * sin(t*2);
-  //   double y = r * cos(t*2);
-  //   double z = -h/2 + t/(2*M_PI) * h;
-  //   pre_point = {x, y, z};
-  //   matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  // }
-
-  // /////////////////////////////// robot control functions - traj 5 ///////////////////////////////
-  // void get_robot_control5(double t) 
-  // {
-  //   // vertical spiral [90 deg about x-axis]
-  //   double r = 0.1;
-  //   double h = 0.2;
-  //   if (t < 0.0) {
-  //     pre_point = {0.0, r, -h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   if (t > 2*M_PI) {
-  //     pre_point = {0.0, r, h/2};
-  //     matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  //     return;
-  //   }
-  //   double x = r * sin(t*2);
-  //   double y = r * cos(t*2);
-  //   double z = -h/2 + t/(2*M_PI) * h;
-  //   pre_point = {x, y, z};
-  //   matrix_mult_vector(trans_matrix, pre_point, robot_offset);
-  // }
-
-
-
-
 
   ///////////////////////////////////// FUNCTION TO PRINT PARAMETERS /////////////////////////////////////
   void print_params() {
     for (unsigned int i=0; i<10; i++) std::cout << "\n";
     std::cout << "\n\nThe current parameters [real_controller] are as follows:\n" << std::endl;
-    std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
-    std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
     std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;
+    std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
     for (unsigned int i=0; i<10; i++) std::cout << "\n";
   }
 
+  // rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr controller_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr controller_pub_;
   rclcpp::TimerBase::SharedPtr controller_timer_;
 
@@ -491,6 +432,7 @@ void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>
   }
 }
 
+
 void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result) 
 {   
   for (size_t i=0; i<mat.size(); i++) {
@@ -502,6 +444,8 @@ void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<doubl
       result.at(i) = sum;
   }
 }
+
+
 
 /////////////////////////////// my own ik function ///////////////////////////////
 

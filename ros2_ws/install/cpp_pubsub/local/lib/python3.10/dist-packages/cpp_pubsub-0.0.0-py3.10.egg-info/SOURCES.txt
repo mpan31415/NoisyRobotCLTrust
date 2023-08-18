@@ -1,5 +1,6 @@
 setup.py
 cpp_pubsub/__init__.py
+cpp_pubsub/data_logger.py
 cpp_pubsub/module_to_import.py
 cpp_pubsub.egg-info/PKG-INFO
 cpp_pubsub.egg-info/SOURCES.txt

@@ -7,10 +7,12 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     # my own launch arguments
+    mapping_ratio_parameter_name = 'mapping_ratio'
     participant_parameter_name = 'part_id'
     trajectory_parameter_name = 'traj_id'
     autonomy_parameter_name = 'auto_id'
 
+    mapping_ratio = LaunchConfiguration(mapping_ratio_parameter_name)
     participant = LaunchConfiguration(participant_parameter_name)
     trajectory = LaunchConfiguration(trajectory_parameter_name)
     autonomy = LaunchConfiguration(autonomy_parameter_name)
@@ -20,17 +22,21 @@ def generate_launch_description():
 
         # my experimental config (using launch arguments)
         DeclareLaunchArgument(
+            mapping_ratio_parameter_name,
+            default_value='2.0',  
+            description='Mapping ratio parameter'),
+        DeclareLaunchArgument(
             participant_parameter_name,
             default_value='0',  
             description='Participant ID parameter'),
         DeclareLaunchArgument(
-            trajectory_parameter_name,
-            default_value='0',  
-            description='Trajectory ID parameter'),
-        DeclareLaunchArgument(
             autonomy_parameter_name,
             default_value='0',  
             description='Autonomy ID parameter'),
+        DeclareLaunchArgument(
+            trajectory_parameter_name,
+            default_value='0',  
+            description='Trajectory ID parameter'),
 
 
         # real robot controller node [need position_talker to be running]
@@ -38,6 +44,7 @@ def generate_launch_description():
             package='cpp_pubsub',
             executable='real_controller',
             parameters=[
+                {mapping_ratio_parameter_name: mapping_ratio},
                 {participant_parameter_name: participant},
                 {trajectory_parameter_name: trajectory},
                 {autonomy_parameter_name: autonomy}

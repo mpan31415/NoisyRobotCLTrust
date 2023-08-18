@@ -5,19 +5,20 @@ from os.path import isfile
 #####################################################################################################
 class DataLogger:
 
-    def __init__(self, csv_dir, part_id, traj_id, auto_id, x_list, y_list, z_list):
+    def __init__(self, csv_dir, part_id, auto_id, traj_id, x_list, y_list, z_list):
         
         self.csv_dir = csv_dir
         self.part_id = part_id
-        self.traj_id = traj_id
         self.auto_id = auto_id
+        self.traj_id = traj_id
+        
         self.x_list = x_list
         self.y_list = y_list
         self.z_list = z_list
         self.num_points = len(self.x_list)
 
         self.header_file_name = self.csv_dir + "part" + str(self.part_id) + "_header.csv"
-        self.header_field_names = ['trial_number', 'traj_id', 'auto_id']
+        self.header_field_names = ['trial_number', 'auto_id', 'traj_id']
 
 
     ##############################################################################
@@ -44,8 +45,8 @@ class DataLogger:
 
             # dictionary that we want to add as a new row
             new_trial_data = {self.header_field_names[0]: trial_id,
-                              self.header_field_names[1]: self.traj_id,
-                              self.header_field_names[2]: self.auto_id
+                              self.header_field_names[1]: self.auto_id,
+                              self.header_field_names[2]: self.traj_id
             }
 
             writer = DictWriter(f, fieldnames=self.header_field_names)
@@ -73,24 +74,24 @@ class DataLogger:
 
     
 
-##############################################################################
-def main():
+# ##############################################################################
+# def main():
 
-    # data for testing
-    part_id = 1
-    traj_id = 1
-    auto_id = 3
+#     # data for testing
+#     part_id = 1
+#     traj_id = 1
+#     auto_id = 3
 
-    csv_dir = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/part" + str(part_id) + "/"
+#     csv_dir = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/part" + str(part_id) + "/"
 
-    # initialize the data logger object, and write to files
-    michael = DataLogger(csv_dir, part_id, traj_id, auto_id, [1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3])
+#     # initialize the data logger object, and write to files
+#     michael = DataLogger(csv_dir, part_id, traj_id, auto_id, [1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3])
 
-    # note, we must call write_header before log_data, since header generates the data_file_name
-    michael.write_header()
-    michael.log_data()
+#     # note, we must call write_header before log_data, since header generates the data_file_name
+#     michael.write_header()
+#     michael.log_data()
 
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
