@@ -23,7 +23,7 @@ def generate_launch_description():
         # my experimental config (using launch arguments)
         DeclareLaunchArgument(
             mapping_ratio_parameter_name,
-            default_value='2.0',  
+            default_value='3.0',  
             description='Mapping ratio parameter'),
         DeclareLaunchArgument(
             participant_parameter_name,

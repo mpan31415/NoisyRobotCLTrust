@@ -70,7 +70,7 @@ public:
     this->declare_parameter(param_names.at(3), 0);
     
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
-    mapping_ratio = std::stoi(params.at(0).value_to_string().c_str());
+    mapping_ratio = std::stod(params.at(0).value_to_string().c_str());
     part_id = std::stoi(params.at(1).value_to_string().c_str());
     auto_id = std::stoi(params.at(2).value_to_string().c_str());
     traj_id = std::stoi(params.at(3).value_to_string().c_str());

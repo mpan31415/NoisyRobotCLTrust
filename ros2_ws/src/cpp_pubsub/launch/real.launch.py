@@ -60,7 +60,7 @@ def generate_launch_description():
         # my experimental config (using launch arguments)
         DeclareLaunchArgument(
             mapping_ratio_parameter_name,
-            default_value='2.0',  
+            default_value='3.0',  
             description='Mapping ratio parameter'),
         DeclareLaunchArgument(
             participant_parameter_name,
@@ -68,7 +68,7 @@ def generate_launch_description():
             description='Participant ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
-            default_value='0',  
+            default_value='0',
             description='Autonomy ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
@@ -100,12 +100,12 @@ def generate_launch_description():
         # ),
 
         # test controller
-        # Node(
-        #     package='controller_manager',
-        #     executable='spawner',
-        #     arguments=['my_controller'],
-        #     output='screen',
-        # ),
+        Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['my_controller'],
+            output='screen',
+        ),
 
         ### kinect_camera launch ### 
         # IncludeLaunchDescription(
@@ -114,19 +114,19 @@ def generate_launch_description():
         # ),
 
         # activate Falcon node [need Falcon to be connected]
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='position_talker',
-        #     parameters=[
-        #         {mapping_ratio_parameter_name: mapping_ratio},
-        #         {participant_parameter_name: participant},
-        #         {trajectory_parameter_name: trajectory},
-        #         {autonomy_parameter_name: autonomy}
-        #     ],
-        #     output='screen',
-        #     emulate_tty=True,
-        #     name='position_talker'
-        # ),
+        Node(
+            package='cpp_pubsub',
+            executable='position_talker',
+            parameters=[
+                {mapping_ratio_parameter_name: mapping_ratio},
+                {participant_parameter_name: participant},
+                {trajectory_parameter_name: trajectory},
+                {autonomy_parameter_name: autonomy}
+            ],
+            output='screen',
+            emulate_tty=True,
+            name='position_talker'
+        ),
 
         # marker publisher node
         Node(
