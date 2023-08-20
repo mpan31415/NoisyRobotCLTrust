@@ -28,7 +28,7 @@ public:
 
   // parameters name list
   std::vector<std::string> param_names = {"mapping_ratio", "part_id", "auto_id", "traj_id"};
-  double mapping_ratio {2.0};
+  double mapping_ratio {3.0};
   int part_id {0};
   int auto_id {0};
   int traj_id {0};

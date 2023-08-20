@@ -35,7 +35,7 @@ const unsigned int n_joints = 7;
 const std::vector<double> lower_joint_limits {-2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973};
 const std::vector<double> upper_joint_limits {2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973};
 
-const bool display_time = true;
+const bool display_time = false;
 
 KDL::Tree panda_tree;
 KDL::Chain panda_chain;
@@ -77,7 +77,7 @@ public:
 
   // parameters name list
   std::vector<std::string> param_names = {"mapping_ratio", "part_id", "auto_id", "traj_id"};
-  double mapping_ratio {2.0};
+  double mapping_ratio {3.0};
   int part_id {0};
   int auto_id {0};
   int traj_id {0};
@@ -126,6 +126,11 @@ public:
   double spiral_r = 0.0;
   double spiral_h = 0.0;
 
+  // initial prep time
+  const int prep_time = 5;    // seconds
+  const int max_prep_count = prep_time * control_freq;
+  int prep_count = 0;
+
 
   ////////////////////////////////////////////////////////////////////////
   RealController()
@@ -171,6 +176,9 @@ public:
     record_flag_pub_ = this->create_publisher<std_msgs::msg::Bool>("record", 10);
     record_flag_timer_ = this->create_wall_timer(1ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 1000 Hz
 
+    // controller count publisher, same frequency as the controller
+    count_pub_ = this->create_publisher<std_msgs::msg::Float64>("controller_count", 10);
+
     joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
 
@@ -188,7 +196,13 @@ private:
   ///////////////////////////////////// JOINT CONTROLLER /////////////////////////////////////
   void controller_publisher()
   { 
-    if (control == true) {
+    if (!control) {
+
+      prep_count++;
+      if (prep_count % control_freq == 0) std::cout << "The prep_count is currently " << prep_count << "\n" << std::endl; 
+      if (prep_count == max_prep_count) control = true;
+
+    } else {
 
       auto traj_message = trajectory_msgs::msg::JointTrajectory();
       traj_message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
@@ -209,8 +223,8 @@ private:
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
       if (count <= max_smoothing_count) w = pow((double)count / max_smoothing_count, 2.0);  // use cubic increase to make it smoother
-      std::cout << "The current count is " << count << std::endl;
-      std::cout << "The current weight is " << w << std::endl;
+      // std::cout << "The current count is " << count << std::endl;
+      // std::cout << "The current weight is " << w << std::endl;
       for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);
 
       ///////// check limits /////////
@@ -224,31 +238,33 @@ private:
       q_desired.position = message_joint_vals;
       controller_pub_->publish(q_desired);
 
-      // set the record flag as either true or false, depending on the number of trajectory points executed
-      if (count == max_smoothing_count && !record_flag && traj_points_sent == 0) {
+      // set the record flag as either true
+      if ((count == max_smoothing_count) && (!record_flag) && (traj_points_sent == 0)) {
         record_flag = true;
         std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => TRUE =======================\n\n\n\n\n\n" << std::endl;
       }
 
+      ///////////// publish the controller count message /////////////
+      auto count_msg = std_msgs::msg::Float64();
+      count_msg.data = count;
+      count_pub_->publish(count_msg);
     }
   }
 
   ///////////////////////////////////// TCP POSITION PUBLISHER /////////////////////////////////////
   void tcp_pos_publisher()
   { 
-    if (record_flag) {
-      // note: this is in meters
-      auto message = tutorial_interfaces::msg::Falconpos();
-      message.x = tcp_pos.at(0);
-      message.y = tcp_pos.at(1);
-      message.z = tcp_pos.at(2);
-      tcp_pos_pub_->publish(message);
+    // note: this is in meters
+    auto message = tutorial_interfaces::msg::Falconpos();
+    message.x = tcp_pos.at(0);
+    message.y = tcp_pos.at(1);
+    message.z = tcp_pos.at(2);
+    tcp_pos_pub_->publish(message);
 
-      traj_points_sent++;
-      if (traj_points_sent == max_traj_points) {
-        record_flag = false;
-        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
-      }
+    if (record_flag) traj_points_sent++;
+    if (traj_points_sent == max_traj_points) {
+      record_flag = false;
+      std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
     }
   }
 
@@ -268,7 +284,7 @@ private:
       curr_joint_vals.at(i) = data.at(i);
     }
     /// if this the first iteration, change the control flag and start partying!
-    if (control == false) control = true;
+    // if (control == false) control = true;
   }
 
   ///////////////////////////////////// FALCON SUBSCRIBER /////////////////////////////////////
@@ -318,6 +334,8 @@ private:
 
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr record_flag_pub_;
   rclcpp::TimerBase::SharedPtr record_flag_timer_;
+
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr count_pub_;
 
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_vals_sub_;
 
