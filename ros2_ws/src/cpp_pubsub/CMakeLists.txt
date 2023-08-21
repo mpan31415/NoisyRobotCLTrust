@@ -27,6 +27,7 @@ find_package(visualization_msgs REQUIRED)
 
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(angles REQUIRED)
 
 # find_package(scipy REQUIRED)
 # find_package(kinpy REQUIRED)
@@ -56,7 +57,7 @@ add_executable(real_controller src/real_controller.cpp)
 ament_target_dependencies(real_controller rclcpp tutorial_interfaces std_msgs trajectory_msgs sensor_msgs kdl_parser)
 
 add_executable(const_br src/const_br.cpp)
-ament_target_dependencies(const_br geometry_msgs rclcpp tf2 tf2_ros)
+ament_target_dependencies(const_br geometry_msgs rclcpp tf2 tf2_ros angles)
 
 add_executable(marker_publisher src/marker_publisher.cpp)
 ament_target_dependencies(marker_publisher rclcpp tutorial_interfaces geometry_msgs visualization_msgs)

@@ -370,6 +370,9 @@ ament_uncrustify_BIN:FILEPATH=/opt/ros/humble/bin/ament_uncrustify
 //Path to a program.
 ament_xmllint_BIN:FILEPATH=/opt/ros/humble/bin/ament_xmllint
 
+//The directory containing a CMake configuration file for angles.
+angles_DIR:PATH=/opt/ros/humble/share/angles/cmake
+
 //The directory containing a CMake configuration file for builtin_interfaces.
 builtin_interfaces_DIR:PATH=/opt/ros/humble/share/builtin_interfaces/cmake
 

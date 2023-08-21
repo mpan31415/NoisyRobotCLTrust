@@ -76,7 +76,8 @@ class RealController : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"mapping_ratio", "part_id", "auto_id", "traj_id"};
+  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "part_id", "auto_id", "traj_id"};
+  int free_drive {0};
   double mapping_ratio {3.0};
   int part_id {0};
   int auto_id {0};
@@ -101,6 +102,8 @@ public:
   int count = 0;
 
   double w = 0.0;  // this is the weight used for initial smoothing, which goes from 0 -> 1 as count goes from 0 -> max_smoothing_count
+
+  double my_ss_weight = 0.8;
 
   // alpha values = amount of HUMAN INPUT, in the range [0, 1]
   double ax = 0.0;
@@ -137,16 +140,18 @@ public:
   : Node("real_controller")
   { 
     // parameter stuff
-    this->declare_parameter(param_names.at(0), 2.0);
-    this->declare_parameter(param_names.at(1), 0);
+    this->declare_parameter(param_names.at(0), 0);
+    this->declare_parameter(param_names.at(1), 3.0);
     this->declare_parameter(param_names.at(2), 0);
     this->declare_parameter(param_names.at(3), 0);
+    this->declare_parameter(param_names.at(4), 0);
     
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
-    mapping_ratio = std::stod(params.at(0).value_to_string().c_str());
-    part_id = std::stoi(params.at(1).value_to_string().c_str());
-    auto_id = std::stoi(params.at(2).value_to_string().c_str());
-    traj_id = std::stoi(params.at(3).value_to_string().c_str());
+    free_drive = std::stoi(params.at(0).value_to_string().c_str());
+    mapping_ratio = std::stod(params.at(1).value_to_string().c_str());
+    part_id = std::stoi(params.at(2).value_to_string().c_str());
+    auto_id = std::stoi(params.at(3).value_to_string().c_str());
+    traj_id = std::stoi(params.at(4).value_to_string().c_str());
     print_params();
 
     // update {ax, ay, az} values using the parameter "auto_id"
@@ -208,7 +213,7 @@ private:
       traj_message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
 
       // get the robot control offset in Cartesian space (calling the corresponding function of the traj_id)
-      t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // t_param is in the range [0, 2pi]
+      t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // t_param is in the range [0, 2pi], but can be out of range
       get_robot_control(t_param);      
 
       // perform the convex combination of robot and human offsets
@@ -222,9 +227,29 @@ private:
 
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
-      if (count <= max_smoothing_count) w = pow((double)count / max_smoothing_count, 2.0);  // use cubic increase to make it smoother
+
+      if (count <= max_smoothing_count) {
+        // we are in the smoothing section
+        w = my_ss_weight * pow((double)count / max_smoothing_count, 2.0);
+      } else {
+        if (count < max_smoothing_count + max_recording_count) {
+          // we are in the trajectory tracking section
+          double ratio = t_param / (2*M_PI);
+          // w = pow(ratio, 0.4);               // power
+          w = -4 * pow((ratio-0.5), 2.0) + 1;   // quadratic
+        } else {
+          // we have just finished the trajectory tracking, stop any control
+          w = 0.0;
+        }
+        // overwrite the weight to 0.5 if we are in free-drive mode
+        if (free_drive == 1) {
+          w = my_ss_weight;
+        }
+      }
+
       // std::cout << "The current count is " << count << std::endl;
-      // std::cout << "The current weight is " << w << std::endl;
+      if (count % 100 == 0) std::cout << "The current weight is " << w << std::endl;
+
       for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);
 
       ///////// check limits /////////
@@ -263,8 +288,10 @@ private:
 
     if (record_flag) traj_points_sent++;
     if (traj_points_sent == max_traj_points) {
-      record_flag = false;
-      std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
+      if (record_flag == true) {
+        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
+      }
+      record_flag = false; 
     }
   }
 
@@ -319,6 +346,7 @@ private:
   void print_params() {
     for (unsigned int i=0; i<10; i++) std::cout << "\n";
     std::cout << "\n\nThe current parameters [real_controller] are as follows:\n" << std::endl;
+    std::cout << "Free drive mode = " << free_drive << "\n" << std::endl;
     std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
     std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
