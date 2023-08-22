@@ -4,13 +4,12 @@ import rclpy
 from rclpy.node import Node
 
 from math import sqrt
-from numpy import array
 
 from tutorial_interfaces.msg import Falconpos
 from std_msgs.msg import Bool
 
 from cpp_pubsub.data_logger import DataLogger
-from cpp_pubsub.traj_utils import get_reference_points, plot_with_scale
+from cpp_pubsub.traj_utils import get_reference_points
 
 
 ORIGIN = [0.4559, 0.0, 0.3846]   # this is in [meters]
@@ -38,17 +37,19 @@ class TrajRecorder(Node):
         super().__init__('traj_recorder')
 
         # parameter stuff
-        self.param_names = ['mapping_ratio', 'part_id', 'auto_id', 'traj_id']
+        self.param_names = ['free_drive', 'mapping_ratio', 'part_id', 'auto_id', 'traj_id']
         self.declare_parameters(
             namespace='',
             parameters=[
-                (self.param_names[0], 3.0),
-                (self.param_names[1], 0),
+                (self.param_names[0], 0),
+                (self.param_names[1], 3.0),
                 (self.param_names[2], 0),
-                (self.param_names[3], 0)
+                (self.param_names[3], 0),
+                (self.param_names[4], 0)
             ]
         )
-        (mapping_ratio_param, part_param, auto_param, traj_param) = self.get_parameters(self.param_names)
+        (free_drive_param, mapping_ratio_param, part_param, auto_param, traj_param) = self.get_parameters(self.param_names)
+        self.free_drive = free_drive_param
         self.mapping_ratio = mapping_ratio_param.value
         self.part_id = part_param.value
         self.auto_id = auto_param.value
@@ -73,6 +74,10 @@ class TrajRecorder(Node):
         self.write_data = LOG_DATA
         self.record = False
         self.data_written = False
+
+        # do not log data if in free-drive mode
+        if self.free_drive:
+            self.write_data = False
         
         # data points of the trajectory
         self.xs = []
@@ -171,6 +176,7 @@ class TrajRecorder(Node):
         print("=" * 100)
 
         print("\n\nThe current parameters [traj_recorder] are as follows:\n")
+        print("The free_drive flag = %d\n\n" % self.free_drive)
         print("The mapping_ratio = %d\n\n" % self.mapping_ratio)
         print("The participant_id = %d\n\n" % self.part_id)
         print("The autonomy_id = %d\n\n" % self.auto_id)

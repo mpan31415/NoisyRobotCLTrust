@@ -21,11 +21,13 @@ def generate_launch_description():
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
     # my own launch arguments
+    free_drive_parameter_name = 'free_drive'
     mapping_ratio_parameter_name = 'mapping_ratio'
     participant_parameter_name = 'part_id'
     trajectory_parameter_name = 'traj_id'
     autonomy_parameter_name = 'auto_id'
 
+    free_drive = LaunchConfiguration(free_drive_parameter_name)
     mapping_ratio = LaunchConfiguration(mapping_ratio_parameter_name)
     participant = LaunchConfiguration(participant_parameter_name)
     trajectory = LaunchConfiguration(trajectory_parameter_name)
@@ -58,6 +60,10 @@ def generate_launch_description():
 
 
         # my experimental config (using launch arguments)
+        DeclareLaunchArgument(
+            free_drive_parameter_name,
+            default_value='0',
+            description='Free drive parameter'),
         DeclareLaunchArgument(
             mapping_ratio_parameter_name,
             default_value='3.0',  
@@ -100,12 +106,12 @@ def generate_launch_description():
         # ),
 
         # my controller
-        # Node(
-        #     package='controller_manager',
-        #     executable='spawner',
-        #     arguments=['my_controller'],
-        #     output='screen',
-        # ),
+        Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['my_controller'],
+            output='screen',
+        ),
 
         ### kinect_camera launch ### 
         # IncludeLaunchDescription(
@@ -147,6 +153,7 @@ def generate_launch_description():
         #     package='cpp_pubsub',
         #     executable='traj_recorder.py',
         #     parameters=[
+        #         {free_drive_parameter_name: free_drive},
         #         {mapping_ratio_parameter_name: mapping_ratio},
         #         {participant_parameter_name: participant},
         #         {trajectory_parameter_name: trajectory},
@@ -157,11 +164,11 @@ def generate_launch_description():
         # )
 
         # publish {camera base frame, depth camera frame}
-        Node(
-            package='cpp_pubsub',
-            executable='const_br',
-            name='const_br'
-        ),
+        # Node(
+        #     package='cpp_pubsub',
+        #     executable='const_br',
+        #     name='const_br'
+        # ),
 
         # ExecuteProcess(
         #         cmd=[

@@ -24,6 +24,8 @@
 #include <kdl/jacobian.hpp>
 #include <kdl/jntarray.hpp>
 
+#include <algorithm>
+
 
 using namespace std::chrono_literals;
 
@@ -62,6 +64,7 @@ void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_
 bool within_limits(std::vector<double>& vals);
 bool create_tree();
 void get_chain();
+double get_min(double a, double b);
 
 void print_joint_vals(std::vector<double>& joint_vals);
 
@@ -92,6 +95,10 @@ public:
   std::vector<double> ik_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<double> message_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
+
+  std::vector<double> initial_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  const int required_initial_vals = 1000;
+  int initial_joint_vals_count = 0;
   
   const int control_freq = 1000;   // the rate at which the "controller_publisher" function is called in [Hz]
   const int tcp_pub_frequency = 20;   // in [Hz]
@@ -104,6 +111,11 @@ public:
   double w = 0.0;  // this is the weight used for initial smoothing, which goes from 0 -> 1 as count goes from 0 -> max_smoothing_count
 
   double my_ss_weight = 0.8;
+  double my_free_drive_weight = 1.0;
+
+  double my_b = 3.5;
+  double my_h = 0.566;
+  double my_g = 1.4;
 
   // alpha values = amount of HUMAN INPUT, in the range [0, 1]
   double ax = 0.0;
@@ -152,6 +164,10 @@ public:
     part_id = std::stoi(params.at(2).value_to_string().c_str());
     auto_id = std::stoi(params.at(3).value_to_string().c_str());
     traj_id = std::stoi(params.at(4).value_to_string().c_str());
+
+    // overwrite auto_id if the free drive mode is activated
+    if (free_drive == 1) auto_id = 5;
+
     print_params();
 
     // update {ax, ay, az} values using the parameter "auto_id"
@@ -228,29 +244,44 @@ private:
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
 
-      if (count <= max_smoothing_count) {
-        // we are in the smoothing section
-        w = my_ss_weight * pow((double)count / max_smoothing_count, 2.0);
-      } else {
-        if (count < max_smoothing_count + max_recording_count) {
-          // we are in the trajectory tracking section
-          double ratio = t_param / (2*M_PI);
-          // w = pow(ratio, 0.4);               // power
-          w = -4 * pow((ratio-0.5), 2.0) + 1;   // quadratic
-        } else {
-          // we have just finished the trajectory tracking, stop any control
-          w = 0.0;
-        }
-        // overwrite the weight to 0.5 if we are in free-drive mode
-        if (free_drive == 1) {
-          w = my_ss_weight;
-        }
-      }
+      // if (count <= max_smoothing_count) {
+      //   // we are in the smoothing section
+      //   // w = pow((double)count / max_smoothing_count, 2.0);
+      //   w = 1.0;
+      // } else {
+      //   if (count < max_smoothing_count + max_recording_count) {
+      //     // we are in the trajectory tracking section
+      //     // double ratio = t_param / (2*M_PI);
+      //     // w = pow(ratio, 0.4);               // power
+      //     // w = -my_b * pow((ratio-my_h), 2.0) + 1;   // quadratic
+      //     // w = get_min((-my_b * pow((ratio-my_h), 2.0) + my_g), 1);     // hybrid
+      //     w = 1.0;
+      //   }
+      //   // overwrite the weight to my_free_drive_weight if we are in free-drive mode
+      //   if (free_drive == 1) {
+      //     w = my_free_drive_weight;
+      //   }
+      // }
 
       // std::cout << "The current count is " << count << std::endl;
-      if (count % 100 == 0) std::cout << "The current weight is " << w << std::endl;
+      // if (count % 100 == 0) std::cout << "The current weight is " << w << std::endl;
 
-      for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = w * ik_joint_vals.at(i) + (1-w) * curr_joint_vals.at(i);
+
+      if (count <= max_smoothing_count) {
+
+        // get lerp position using time
+        double ratio = (double) count / max_smoothing_count;
+        // std::cout << "The smoothing ratio is " << ratio << std::endl;
+        for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ratio * ik_joint_vals.at(i) + (1-ratio) * initial_joint_vals.at(i);
+
+      } else {
+
+        for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ik_joint_vals.at(i);
+
+      }
+
+      print_joint_vals(message_joint_vals);
+
 
       ///////// check limits /////////
       if (!within_limits(message_joint_vals)) {
@@ -310,8 +341,15 @@ private:
     for (unsigned int i=0; i<n_joints; i++) {
       curr_joint_vals.at(i) = data.at(i);
     }
-    /// if this the first iteration, change the control flag and start partying!
-    // if (control == false) control = true;
+    // get and store initial joint values if haven't received enough messages
+    if (initial_joint_vals_count < required_initial_vals) {
+      for (unsigned int i=0; i<n_joints; i++) {
+        initial_joint_vals.at(i) = data.at(i);
+      }
+      initial_joint_vals_count++;
+
+      print_joint_vals(initial_joint_vals);
+    }
   }
 
   ///////////////////////////////////// FALCON SUBSCRIBER /////////////////////////////////////
@@ -474,6 +512,11 @@ void print_joint_vals(std::vector<double>& joint_vals) {
     std::cout << joint_vals.at(i) << ' ';
   }
   std::cout << "]" << std::endl;
+}
+
+double get_min(double a, double b) {
+  if (a<b) return a;
+  return b;
 }
 
 
