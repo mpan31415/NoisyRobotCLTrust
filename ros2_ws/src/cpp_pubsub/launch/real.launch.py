@@ -120,19 +120,19 @@ def generate_launch_description():
         # ),
 
         # activate Falcon node [need Falcon to be connected]
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='position_talker',
-        #     parameters=[
-        #         {mapping_ratio_parameter_name: mapping_ratio},
-        #         {participant_parameter_name: participant},
-        #         {trajectory_parameter_name: trajectory},
-        #         {autonomy_parameter_name: autonomy}
-        #     ],
-        #     output='screen',
-        #     emulate_tty=True,
-        #     name='position_talker'
-        # ),
+        Node(
+            package='cpp_pubsub',
+            executable='position_talker',
+            parameters=[
+                {mapping_ratio_parameter_name: mapping_ratio},
+                {participant_parameter_name: participant},
+                {trajectory_parameter_name: trajectory},
+                {autonomy_parameter_name: autonomy}
+            ],
+            output='screen',
+            emulate_tty=True,
+            name='position_talker'
+        ),
 
         # marker publisher node
         Node(

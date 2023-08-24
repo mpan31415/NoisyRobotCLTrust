@@ -95,27 +95,25 @@ public:
   std::vector<double> ik_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<double> message_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
-
-  std::vector<double> initial_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  const int required_initial_vals = 1000;
-  int initial_joint_vals_count = 0;
   
   const int control_freq = 1000;   // the rate at which the "controller_publisher" function is called in [Hz]
   const int tcp_pub_frequency = 20;   // in [Hz]
 
-  // used to initially smoothly incorporate the Falcon offset
+  // step 1: prep-time
+  const int prep_time = 3;    // seconds
+  const int max_prep_count = prep_time * control_freq;
+  int prep_count = 0;
+
+  std::vector<double> initial_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  const int required_initial_vals = 100;
+  int initial_joint_vals_count = 0;
+
+  // step 2: smoothing -> used to initially smoothly incorporate the Falcon offset
   const int smoothing_time = 5;   /// smoothing time in [seconds]
   const int max_smoothing_count = control_freq * smoothing_time;
+  const int float_time = 2;     // time to float at starting position [seconds]
+
   int count = 0;
-
-  double w = 0.0;  // this is the weight used for initial smoothing, which goes from 0 -> 1 as count goes from 0 -> max_smoothing_count
-
-  double my_ss_weight = 0.8;
-  double my_free_drive_weight = 1.0;
-
-  double my_b = 3.5;
-  double my_h = 0.566;
-  double my_g = 1.4;
 
   // alpha values = amount of HUMAN INPUT, in the range [0, 1]
   double ax = 0.0;
@@ -140,11 +138,6 @@ public:
   // for the spiral dimensions
   double spiral_r = 0.0;
   double spiral_h = 0.0;
-
-  // initial prep time
-  const int prep_time = 5;    // seconds
-  const int max_prep_count = prep_time * control_freq;
-  int prep_count = 0;
 
 
   ////////////////////////////////////////////////////////////////////////
@@ -244,44 +237,21 @@ private:
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
 
-      // if (count <= max_smoothing_count) {
-      //   // we are in the smoothing section
-      //   // w = pow((double)count / max_smoothing_count, 2.0);
-      //   w = 1.0;
-      // } else {
-      //   if (count < max_smoothing_count + max_recording_count) {
-      //     // we are in the trajectory tracking section
-      //     // double ratio = t_param / (2*M_PI);
-      //     // w = pow(ratio, 0.4);               // power
-      //     // w = -my_b * pow((ratio-my_h), 2.0) + 1;   // quadratic
-      //     // w = get_min((-my_b * pow((ratio-my_h), 2.0) + my_g), 1);     // hybrid
-      //     w = 1.0;
-      //   }
-      //   // overwrite the weight to my_free_drive_weight if we are in free-drive mode
-      //   if (free_drive == 1) {
-      //     w = my_free_drive_weight;
-      //   }
-      // }
-
-      // std::cout << "The current count is " << count << std::endl;
-      // if (count % 100 == 0) std::cout << "The current weight is " << w << std::endl;
-
-
       if (count <= max_smoothing_count) {
+        double ratio = 0.0;
+        if (count <= max_smoothing_count - control_freq * float_time) {
+          // get lerp position using time
+          ratio = (double) count / (max_smoothing_count - control_freq * float_time);    // need to get there early and "float"
+        } else {
+          ratio = 1.0;
+        }
+        std::cout << "The smoothing ratio is " << ratio << std::endl;
 
-        // get lerp position using time
-        double ratio = (double) count / max_smoothing_count;
-        // std::cout << "The smoothing ratio is " << ratio << std::endl;
         for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ratio * ik_joint_vals.at(i) + (1-ratio) * initial_joint_vals.at(i);
 
       } else {
-
         for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ik_joint_vals.at(i);
-
       }
-
-      print_joint_vals(message_joint_vals);
-
 
       ///////// check limits /////////
       if (!within_limits(message_joint_vals)) {
@@ -348,7 +318,7 @@ private:
       }
       initial_joint_vals_count++;
 
-      print_joint_vals(initial_joint_vals);
+      // print_joint_vals(initial_joint_vals);
     }
   }
 
