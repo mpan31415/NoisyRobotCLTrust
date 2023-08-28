@@ -70,6 +70,10 @@ CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/ms
 CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__builder.hpp
 CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__struct.hpp
 CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__traits.hpp
+CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/pos_info.hpp
+CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__builder.hpp
+CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__struct.hpp
+CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__traits.hpp
 CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/srv/add_three_ints.hpp
 CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/srv/detail/add_three_ints__builder.hpp
 CMakeFiles/tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/srv/detail/add_three_ints__struct.hpp
@@ -91,6 +95,7 @@ rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: /opt/ros/humble/shar
 rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: /opt/ros/humble/share/rosidl_generator_cpp/resource/srv__struct.hpp.em
 rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: /opt/ros/humble/share/rosidl_generator_cpp/resource/srv__traits.hpp.em
 rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: rosidl_adapter/tutorial_interfaces/msg/Falconpos.idl
+rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: rosidl_adapter/tutorial_interfaces/msg/PosInfo.idl
 rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: rosidl_adapter/tutorial_interfaces/srv/AddThreeInts.idl
 rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: /opt/ros/humble/share/geometry_msgs/msg/Accel.idl
 rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp: /opt/ros/humble/share/geometry_msgs/msg/AccelStamped.idl
@@ -163,6 +168,18 @@ rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__struct.hpp: rosid
 rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__traits.hpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__traits.hpp
 
+rosidl_generator_cpp/tutorial_interfaces/msg/pos_info.hpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/tutorial_interfaces/msg/pos_info.hpp
+
+rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__builder.hpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__builder.hpp
+
+rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__struct.hpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__struct.hpp
+
+rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__traits.hpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__traits.hpp
+
 rosidl_generator_cpp/tutorial_interfaces/srv/add_three_ints.hpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/tutorial_interfaces/srv/add_three_ints.hpp
 
@@ -179,7 +196,11 @@ tutorial_interfaces__cpp: CMakeFiles/tutorial_interfaces__cpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__builder.hpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__struct.hpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/falconpos__traits.hpp
+tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__builder.hpp
+tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__struct.hpp
+tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/detail/pos_info__traits.hpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/falconpos.hpp
+tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/msg/pos_info.hpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/srv/add_three_ints.hpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/srv/detail/add_three_ints__builder.hpp
 tutorial_interfaces__cpp: rosidl_generator_cpp/tutorial_interfaces/srv/detail/add_three_ints__struct.hpp

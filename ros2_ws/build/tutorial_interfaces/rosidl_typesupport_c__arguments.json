@@ -4,6 +4,7 @@
   "template_dir": "/opt/ros/humble/share/rosidl_typesupport_c/resource",
   "idl_tuples": [
     "/home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/Falconpos.idl",
+    "/home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:msg/PosInfo.idl",
     "/home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces:srv/AddThreeInts.idl"
   ],
   "ros_interface_dependencies": [
@@ -75,6 +76,7 @@
     "/opt/ros/humble/share/rosidl_typesupport_c/resource/msg__type_support.cpp.em",
     "/opt/ros/humble/share/rosidl_typesupport_c/resource/srv__type_support.cpp.em",
     "/home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/Falconpos.idl",
+    "/home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/msg/PosInfo.idl",
     "/home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_adapter/tutorial_interfaces/srv/AddThreeInts.idl",
     "/opt/ros/humble/share/geometry_msgs/msg/Accel.idl",
     "/opt/ros/humble/share/geometry_msgs/msg/AccelStamped.idl",

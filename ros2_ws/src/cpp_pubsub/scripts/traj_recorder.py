@@ -6,10 +6,14 @@ from rclpy.node import Node
 from math import sqrt
 
 from tutorial_interfaces.msg import Falconpos
+from tutorial_interfaces.msg import PosInfo
 from std_msgs.msg import Bool
 
 from cpp_pubsub.data_logger import DataLogger
 from cpp_pubsub.traj_utils import get_reference_points
+
+from datetime import datetime
+from time import time
 
 
 ORIGIN = [0.4559, 0.0, 0.3846]   # this is in [meters]
@@ -49,7 +53,7 @@ class TrajRecorder(Node):
             ]
         )
         (free_drive_param, mapping_ratio_param, part_param, auto_param, traj_param) = self.get_parameters(self.param_names)
-        self.free_drive = free_drive_param
+        self.free_drive = free_drive_param.value
         self.mapping_ratio = mapping_ratio_param.value
         self.part_id = part_param.value
         self.auto_id = auto_param.value
@@ -63,7 +67,7 @@ class TrajRecorder(Node):
                                                                self.traj_params['angle'], ORIGIN)
 
         # tcp position subscriber
-        self.tcp_pos_sub = self.create_subscription(Falconpos, 'tcp_position', self.tcp_pos_callback, 10)
+        self.tcp_pos_sub = self.create_subscription(PosInfo, 'tcp_position', self.tcp_pos_callback, 10)
         self.tcp_pos_sub  # prevent unused variable warning
 
         # record flag subscriber
@@ -79,10 +83,21 @@ class TrajRecorder(Node):
         if self.free_drive:
             self.write_data = False
         
-        # data points of the trajectory
-        self.xs = []
-        self.ys = []
-        self.zs = []
+        # data points of the trajectory {human, robot, total}
+        self.hxs = []
+        self.hys = []
+        self.hzs = []
+
+        self.rxs = []
+        self.rys = []
+        self.rzs = []
+
+        self.txs = []
+        self.tys = []
+        self.tzs = []
+
+        self.times = []
+        self.datetimes = []
 
         # file name of the csv sheet
         self.csv_dir = ALL_CSV_DIR + "part" + str(self.part_id) + "/"
@@ -93,16 +108,34 @@ class TrajRecorder(Node):
         
         if self.record:
             # self.get_logger().info('Recording the tcp position: x = %.3f, y = %.3f, z = %.3f ' % (msg.x, msg.y, msg.z))
-            self.xs.append(msg.x)
-            self.ys.append(msg.y)
-            self.zs.append(msg.z)
-        
-        else:
-            if len(self.xs) > 0 and not self.data_written:
+            self.hxs.append(msg.human_position[0])
+            self.hys.append(msg.human_position[1])
+            self.hzs.append(msg.human_position[2])
+
+            self.rxs.append(msg.robot_position[0])
+            self.rys.append(msg.robot_position[1])
+            self.rzs.append(msg.robot_position[2])
+
+            self.txs.append(msg.tcp_position[0])
+            self.tys.append(msg.tcp_position[1])
+            self.tzs.append(msg.tcp_position[2])
+
+            self.times.append(time())
+            self.datetimes.append(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
+            # print("Appending new data, currently at size %d" % len(self.hxs))
+
+            if len(self.hxs) == 200:
                 # print("\n\nWe have finished recording!, writing to csv now!\n\n")
                 # we have finished recording points, write to csv file now
-                self.calc_error()
-
+                if self.write_data:
+                    self.write_to_csv()
+                    self.data_written = True
+        
+        else:
+            if len(self.hxs) > 0 and not self.data_written:
+                print("\n\nWe have finished recording!, writing to csv now!\n\n")
+                # we have finished recording points, write to csv file now
                 if self.write_data:
                     self.write_to_csv()
                     self.data_written = True
@@ -116,58 +149,11 @@ class TrajRecorder(Node):
     ##############################################################################
     def write_to_csv(self):
 
-        dl = DataLogger(self.csv_dir, self.part_id, self.auto_id, self.traj_id, self.xs, self.ys, self.zs, 
-                        self.xerr_list, self.yerr_list, self.zerr_list, self.error_list, self.xerr, self.yerr, self.zerr, self.total_err)
+        dl = DataLogger(self.csv_dir, self.part_id, self.auto_id, self.traj_id, self.hxs, self.hys, self.hzs,
+                        self.rxs, self.rys, self.rzs, self.txs, self.tys, self.tzs, self.times, self.datetimes)
 
         dl.write_header()
         dl.log_data()
-
-
-    ##############################################################################
-    def calc_error(self):
-        
-        num_points = len(self.xs)
-
-        xerr_list = []
-        yerr_list = []
-        zerr_list = []
-        norm_errors = []
-
-        total_xerr = 0
-        total_yerr = 0
-        total_zerr = 0
-        total_err = 0
-        
-        for i in range(num_points):
-            
-            # errors in each dimension
-            x_err = self.xs[i] - self.refx[i]
-            y_err = self.ys[i] - self.refy[i]
-            z_err = self.zs[i] - self.refz[i]
-
-            xerr_list.append(x_err)
-            yerr_list.append(y_err)
-            zerr_list.append(z_err)
-
-            total_xerr += abs(x_err)
-            total_yerr += abs(y_err)
-            total_zerr += abs(z_err)
-
-            # magnitude of Euclidean error
-            norm_err = sqrt(x_err**2 + y_err**2 + z_err**2)
-            norm_errors.append(norm_err)
-            total_err += norm_err
-
-        # assign to class variables
-        self.xerr = total_xerr
-        self.yerr = total_yerr
-        self.zerr = total_zerr
-        self.total_err = total_err
-
-        self.xerr_list = xerr_list
-        self.yerr_list = yerr_list
-        self.zerr_list = zerr_list
-        self.error_list = norm_errors
 
     
     ##############################################################################

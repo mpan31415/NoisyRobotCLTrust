@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/tutorial_interfaces__rosidl_generator_py.dir/rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c.o"
   "CMakeFiles/tutorial_interfaces__rosidl_generator_py.dir/rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c.o.d"
+  "CMakeFiles/tutorial_interfaces__rosidl_generator_py.dir/rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c.o"
+  "CMakeFiles/tutorial_interfaces__rosidl_generator_py.dir/rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c.o.d"
   "CMakeFiles/tutorial_interfaces__rosidl_generator_py.dir/rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c.o"
   "CMakeFiles/tutorial_interfaces__rosidl_generator_py.dir/rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c.o.d"
   "rosidl_generator_py/tutorial_interfaces/libtutorial_interfaces__rosidl_generator_py.pdb"

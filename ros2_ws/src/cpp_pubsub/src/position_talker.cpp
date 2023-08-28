@@ -37,9 +37,11 @@ public:
   double p[3] {0.0, 0.0, 0.0};
   double v[3] {0.0, 0.0, 0.0};
   double f[3] {0.0, 0.0, 0.0};
-  double K[3] {200.0, 70.0, 70.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
+  double K[3] {200.0, 50.0, 50.0};     //////////////////// -> this is the initial gain vector K, will be changed after a few seconds!
   double C[3] {5.0, 5.0, 5.0};      //////////// -> damping vector C, having values higher than 5 will likely cause vibrations
   int choice;
+
+  const int pub_freq = 250;    // publishing rate in [Hz]
 
   ///////// -> this is the centering / starting Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
   ///////// -> max bounds are around +-0.05m (5cm)
@@ -64,7 +66,7 @@ public:
     choice = a_choice;
 
     // parameter stuff
-    this->declare_parameter(param_names.at(0), 2.0);
+    this->declare_parameter(param_names.at(0), 3.0);
     this->declare_parameter(param_names.at(1), 0);
     this->declare_parameter(param_names.at(2), 0);
     this->declare_parameter(param_names.at(3), 0);
@@ -95,8 +97,7 @@ public:
 
     // publisher
     publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
-    timer_ = this->create_wall_timer(
-      1ms, std::bind(&PositionTalker::timer_callback, this)); ///////// publishing at 1000 Hz /////////
+    timer_ = this->create_wall_timer(4ms, std::bind(&PositionTalker::timer_callback, this));       ///////// publishing at 250 Hz /////////
   }
 
 
@@ -157,14 +158,14 @@ private:
         reset = false;
 
         // restore the K and C gain vectors to initial values
-        K[0] = 200.0; K[1] = 70.0; K[2] = 70.0;
-        C[0] = 5.0;   C[1] = 5.0;   C[2] = 5.0;
+        K[0] = 200.0; K[1] = 50.0; K[2] = 50.0;
+        C[0] = 5.0;   C[1] = 5.0;  C[2] = 5.0;
       }
     }
 
     count++;
     if (count > count_thres1) {
-      K[0] = 700.0; K[1] = 400.0; K[2] = 400.0;
+      K[0] = 500.0; K[1] = 250.0; K[2] = 250.0;
     }
     if (count > count_thres2) {
       K[0] = 2000.0; K[1] = 1500.0; K[2] = 1500.0;
@@ -185,9 +186,9 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr publisher_;
 
-  const int count_thres1 = 1000;   // 1 second
-  const int count_thres2 = 1500;   // 1.5 seconds
-  const int count_thres3 = 2000;   // 2 seconds
+  const int count_thres1 = 1 * pub_freq;   // 1 second
+  const int count_thres2 = 1.5 * pub_freq;   // 1.5 seconds
+  const int count_thres3 = 2 * pub_freq;   // 2 seconds
 
   int count {0};
   int reset_count {0};

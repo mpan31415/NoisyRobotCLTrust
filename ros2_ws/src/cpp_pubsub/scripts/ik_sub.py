@@ -13,12 +13,12 @@ class IkSubscriber(Node):
         super().__init__('ik_subscriber')
         self.subscription = self.create_subscription(
             JointState,
-            'desired_joint_vals',
+            'tau_d_calculated',
             self.listener_callback,
             10)
         self.subscription  # prevent unused variable warning
 
-        self.max_len = 200
+        self.max_len = 1000
         self.len = 0
         self.joint_vals = []
         self.plotted = False

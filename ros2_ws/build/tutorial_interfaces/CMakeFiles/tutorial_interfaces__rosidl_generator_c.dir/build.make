@@ -83,6 +83,7 @@ rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: /opt/ros/humble/share/ro
 rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: /opt/ros/humble/share/rosidl_generator_c/resource/msg__type_support.h.em
 rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: /opt/ros/humble/share/rosidl_generator_c/resource/srv__type_support.h.em
 rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: rosidl_adapter/tutorial_interfaces/msg/Falconpos.idl
+rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: rosidl_adapter/tutorial_interfaces/msg/PosInfo.idl
 rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: rosidl_adapter/tutorial_interfaces/srv/AddThreeInts.idl
 rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: /opt/ros/humble/share/geometry_msgs/msg/Accel.idl
 rosidl_generator_c/tutorial_interfaces/msg/falconpos.h: /opt/ros/humble/share/geometry_msgs/msg/AccelStamped.idl
@@ -155,6 +156,18 @@ rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__struct.h: rosidl_ge
 rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__type_support.h: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__type_support.h
 
+rosidl_generator_c/tutorial_interfaces/msg/pos_info.h: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/pos_info.h
+
+rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.h: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.h
+
+rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__struct.h: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__struct.h
+
+rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__type_support.h: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__type_support.h
+
 rosidl_generator_c/tutorial_interfaces/srv/add_three_ints.h: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/srv/add_three_ints.h
 
@@ -169,6 +182,9 @@ rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__type_support.h
 
 rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c
+
+rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c
 
 rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c
@@ -187,10 +203,24 @@ CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutori
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c -o CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c.s
 
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/flags.make
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o: rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o -MF CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o.d -o CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o -c /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c
+
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c > CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.i
+
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c -o CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.s
+
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/flags.make
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o: rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building C object CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o -MF CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o.d -o CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o -c /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c
 
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.i: cmake_force
@@ -204,12 +234,14 @@ CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutori
 # Object files for target tutorial_interfaces__rosidl_generator_c
 tutorial_interfaces__rosidl_generator_c_OBJECTS = \
 "CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c.o" \
+"CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o" \
 "CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o"
 
 # External object files for target tutorial_interfaces__rosidl_generator_c
 tutorial_interfaces__rosidl_generator_c_EXTERNAL_OBJECTS =
 
 libtutorial_interfaces__rosidl_generator_c.so: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.c.o
+libtutorial_interfaces__rosidl_generator_c.so: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c.o
 libtutorial_interfaces__rosidl_generator_c.so: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c.o
 libtutorial_interfaces__rosidl_generator_c.so: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/build.make
 libtutorial_interfaces__rosidl_generator_c.so: /opt/ros/humble/lib/libgeometry_msgs__rosidl_generator_c.so
@@ -218,7 +250,7 @@ libtutorial_interfaces__rosidl_generator_c.so: /opt/ros/humble/lib/libbuiltin_in
 libtutorial_interfaces__rosidl_generator_c.so: /opt/ros/humble/lib/librosidl_runtime_c.so
 libtutorial_interfaces__rosidl_generator_c.so: /opt/ros/humble/lib/librcutils.so
 libtutorial_interfaces__rosidl_generator_c.so: CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking C shared library libtutorial_interfaces__rosidl_generator_c.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking C shared library libtutorial_interfaces__rosidl_generator_c.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -233,7 +265,12 @@ CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__functions.h
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__struct.h
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/falconpos__type_support.h
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.c
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__functions.h
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__struct.h
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/detail/pos_info__type_support.h
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/falconpos.h
+CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/msg/pos_info.h
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/srv/add_three_ints.h
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.c
 CMakeFiles/tutorial_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/tutorial_interfaces/srv/detail/add_three_ints__functions.h

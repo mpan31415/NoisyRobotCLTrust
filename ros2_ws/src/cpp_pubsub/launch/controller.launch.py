@@ -3,6 +3,8 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+from cpp_pubsub.exp_params import *
+
 
 def generate_launch_description():
 
@@ -23,25 +25,46 @@ def generate_launch_description():
     return LaunchDescription([
 
         # my experimental config (using launch arguments)
+        # DeclareLaunchArgument(
+        #     free_drive_parameter_name,
+        #     default_value='0',  
+        #     description='Free drive parameter'),
+        # DeclareLaunchArgument(
+        #     mapping_ratio_parameter_name,
+        #     default_value='3.0',  
+        #     description='Mapping ratio parameter'),
+        # DeclareLaunchArgument(
+        #     participant_parameter_name,
+        #     default_value='0',  
+        #     description='Participant ID parameter'),
+        # DeclareLaunchArgument(
+        #     autonomy_parameter_name,
+        #     default_value='0',
+        #     description='Autonomy ID parameter'),
+        # DeclareLaunchArgument(
+        #     trajectory_parameter_name,
+        #     default_value='0',
+        #     description='Trajectory ID parameter'),
+
         DeclareLaunchArgument(
             free_drive_parameter_name,
-            default_value='0',  
+            default_value=my_free_drive,  
             description='Free drive parameter'),
         DeclareLaunchArgument(
             mapping_ratio_parameter_name,
-            default_value='3.0',  
+            default_value=my_mapping_ratio,  
             description='Mapping ratio parameter'),
         DeclareLaunchArgument(
             participant_parameter_name,
-            default_value='0',  
+            default_value=my_part_id,  
             description='Participant ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
-            default_value='0',
+            default_value=my_auto_id,
             description='Autonomy ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
-            default_value='0',
+            default_value=my_traj_id,
             description='Trajectory ID parameter'),
 
 

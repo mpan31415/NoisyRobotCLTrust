@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "../rosidl_generator_py/tutorial_interfaces/msg/__init__.py"
   "../rosidl_generator_py/tutorial_interfaces/msg/_falconpos.py"
   "../rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c"
+  "../rosidl_generator_py/tutorial_interfaces/msg/_pos_info.py"
+  "../rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c"
   "../rosidl_generator_py/tutorial_interfaces/srv/__init__.py"
   "../rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints.py"
   "../rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c"

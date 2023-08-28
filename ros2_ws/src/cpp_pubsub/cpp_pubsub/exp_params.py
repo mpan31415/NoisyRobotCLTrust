@@ -1,0 +1,5 @@
+my_free_drive = '0'
+my_mapping_ratio = '3.0'
+my_part_id = '0'
+my_auto_id = '0'
+my_traj_id = '0'

@@ -5,9 +5,12 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
+from cpp_pubsub.exp_params import *
+
 
 def generate_launch_description():
 
+    ###### franka_bringup franka.launch.py parameters ######
     robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
@@ -20,7 +23,8 @@ def generate_launch_description():
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_rviz = LaunchConfiguration(use_rviz_parameter_name)
 
-    # my own launch arguments
+
+    ###### my own launch arguments ######
     free_drive_parameter_name = 'free_drive'
     mapping_ratio_parameter_name = 'mapping_ratio'
     participant_parameter_name = 'part_id'
@@ -35,6 +39,8 @@ def generate_launch_description():
 
 
     return LaunchDescription([
+        
+        ###### franka_bringup franka.launch.py parameters ######
         DeclareLaunchArgument(
             robot_ip_parameter_name,
             default_value='172.16.0.2',                 ### originally this line was not here
@@ -59,26 +65,47 @@ def generate_launch_description():
                         'without an end-effector.'),
 
 
-        # my experimental config (using launch arguments)
+        ###### my experimental config (using launch arguments) ######
+        # DeclareLaunchArgument(
+        #     free_drive_parameter_name,
+        #     default_value='0',
+        #     description='Free drive parameter'),
+        # DeclareLaunchArgument(
+        #     mapping_ratio_parameter_name,
+        #     default_value='3.0',  
+        #     description='Mapping ratio parameter'),
+        # DeclareLaunchArgument(
+        #     participant_parameter_name,
+        #     default_value='0',  
+        #     description='Participant ID parameter'),
+        # DeclareLaunchArgument(
+        #     autonomy_parameter_name,
+        #     default_value='0',
+        #     description='Autonomy ID parameter'),
+        # DeclareLaunchArgument(
+        #     trajectory_parameter_name,
+        #     default_value='0',
+        #     description='Trajectory ID parameter'),
+
         DeclareLaunchArgument(
             free_drive_parameter_name,
-            default_value='0',
+            default_value=my_free_drive,
             description='Free drive parameter'),
         DeclareLaunchArgument(
             mapping_ratio_parameter_name,
-            default_value='3.0',  
+            default_value=my_mapping_ratio,  
             description='Mapping ratio parameter'),
         DeclareLaunchArgument(
             participant_parameter_name,
-            default_value='0',  
+            default_value=my_part_id,  
             description='Participant ID parameter'),
         DeclareLaunchArgument(
             autonomy_parameter_name,
-            default_value='0',
+            default_value=my_auto_id,
             description='Autonomy ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
-            default_value='0',
+            default_value=my_traj_id,
             description='Trajectory ID parameter'),
 
 
@@ -149,35 +176,36 @@ def generate_launch_description():
         ),
 
         # trajectory recorder node
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='traj_recorder.py',
-        #     parameters=[
-        #         {free_drive_parameter_name: free_drive},
-        #         {mapping_ratio_parameter_name: mapping_ratio},
-        #         {participant_parameter_name: participant},
-        #         {trajectory_parameter_name: trajectory},
-        #         {autonomy_parameter_name: autonomy}
-        #     ],
-        #     output='screen',
-        #     emulate_tty=True
-        # )
+        Node(
+            package='cpp_pubsub',
+            executable='traj_recorder.py',
+            parameters=[
+                {free_drive_parameter_name: free_drive},
+                {mapping_ratio_parameter_name: mapping_ratio},
+                {participant_parameter_name: participant},
+                {trajectory_parameter_name: trajectory},
+                {autonomy_parameter_name: autonomy}
+            ],
+            output='screen',
+            emulate_tty=True
+        ),
 
         # publish {camera base frame, depth camera frame}
-        # Node(
-        #     package='cpp_pubsub',
-        #     executable='const_br',
-        #     name='const_br'
-        # ),
+        Node(
+            package='cpp_pubsub',
+            executable='const_br',
+            name='const_br'
+        ),
 
-        # ExecuteProcess(
-        #         cmd=[
-        #             "ros2",
-        #             "bag",
-        #             "play",
-        #             "/home/michael/bag_files/mybag2",
-        #         ],
-        #         output="screen",
-        # )
+        # publish recorded point cloud
+        ExecuteProcess(
+                cmd=[
+                    "ros2",
+                    "bag",
+                    "play",
+                    "/home/michael/bag_files/my_bag3",
+                ],
+                output="screen",
+        )
 
     ])

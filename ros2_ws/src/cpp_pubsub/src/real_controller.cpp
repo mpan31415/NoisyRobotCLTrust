@@ -7,6 +7,7 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 
 #include "tutorial_interfaces/msg/falconpos.hpp"
+#include "tutorial_interfaces/msg/pos_info.hpp"
 
 #include <chrono>
 #include <functional>
@@ -96,16 +97,16 @@ public:
   std::vector<double> message_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   bool control = false;
   
-  const int control_freq = 1000;   // the rate at which the "controller_publisher" function is called in [Hz]
+  const int control_freq = 200;   // the rate at which the "controller_publisher" function is called in [Hz]
   const int tcp_pub_frequency = 20;   // in [Hz]
 
   // step 1: prep-time
-  const int prep_time = 3;    // seconds
+  const int prep_time = 5;    // seconds
   const int max_prep_count = prep_time * control_freq;
   int prep_count = 0;
 
   std::vector<double> initial_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  const int required_initial_vals = 100;
+  const int required_initial_vals = control_freq * 3;   // get initial joint values for 3 seconds
   int initial_joint_vals_count = 0;
 
   // step 2: smoothing -> used to initially smoothly incorporate the Falcon offset
@@ -180,21 +181,21 @@ public:
 
     // joint controller publisher & timer
     controller_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("desired_joint_vals", 10);
-    controller_timer_ = this->create_wall_timer(1ms, std::bind(&RealController::controller_publisher, this));    // controls at 1000 Hz
+    controller_timer_ = this->create_wall_timer(5ms, std::bind(&RealController::controller_publisher, this));    // controls at 200 Hz
 
     // tcp position publisher & timer
-    tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("tcp_position", 10);
-    tcp_pos_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 20 Hz
+    tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::PosInfo>("tcp_position", 10);
+    // tcp_pos_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 20 Hz
 
     // recording flag publisher & timer
     record_flag_pub_ = this->create_publisher<std_msgs::msg::Bool>("record", 10);
-    record_flag_timer_ = this->create_wall_timer(1ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 1000 Hz
+    record_flag_timer_ = this->create_wall_timer(2ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 500 Hz
 
     // controller count publisher, same frequency as the controller
     count_pub_ = this->create_publisher<std_msgs::msg::Float64>("controller_count", 10);
 
     joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
-      "joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
+      "franka/joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
 
     falcon_pos_sub_ = this->create_subscription<tutorial_interfaces::msg::Falconpos>(
       "falcon_position", 10, std::bind(&RealController::falcon_pos_callback, this, std::placeholders::_1));
@@ -216,6 +217,15 @@ private:
       if (prep_count % control_freq == 0) std::cout << "The prep_count is currently " << prep_count << "\n" << std::endl; 
       if (prep_count == max_prep_count) control = true;
 
+      if (prep_count > max_prep_count - control_freq*2) {
+        ///////// warm-up the wait-set 2 seconds before actual control /////////
+        ///////// here we need to publish the initial_joint_vals /////////
+        auto q_desired = sensor_msgs::msg::JointState();
+        q_desired.position = initial_joint_vals;
+        controller_pub_->publish(q_desired);
+      }
+      
+
     } else {
 
       auto traj_message = trajectory_msgs::msg::JointTrajectory();
@@ -233,6 +243,9 @@ private:
 
       ///////// compute IK /////////
       compute_ik(tcp_pos, curr_joint_vals, ik_joint_vals);
+
+      ///////////// publish the tcp position message /////////////
+      if (record_flag && ((count - max_smoothing_count) % (control_freq / 20) == 0)) RealController::tcp_pos_publisher();
 
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
@@ -281,10 +294,26 @@ private:
   void tcp_pos_publisher()
   { 
     // note: this is in meters
-    auto message = tutorial_interfaces::msg::Falconpos();
-    message.x = tcp_pos.at(0);
-    message.y = tcp_pos.at(1);
-    message.z = tcp_pos.at(2);
+    auto message = tutorial_interfaces::msg::PosInfo();
+
+    message.human_position = {
+      origin.at(0) + human_offset.at(0),
+      origin.at(1) + human_offset.at(1),
+      origin.at(2) + human_offset.at(2)
+    };
+
+    message.robot_position = {
+      origin.at(0) + robot_offset.at(0),
+      origin.at(1) + robot_offset.at(1),
+      origin.at(2) + robot_offset.at(2)
+    };
+
+    message.tcp_position = {
+      tcp_pos.at(0),
+      tcp_pos.at(1),
+      tcp_pos.at(2)
+    };
+
     tcp_pos_pub_->publish(message);
 
     if (record_flag) traj_points_sent++;
@@ -365,8 +394,8 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr controller_pub_;
   rclcpp::TimerBase::SharedPtr controller_timer_;
 
-  rclcpp::Publisher<tutorial_interfaces::msg::Falconpos>::SharedPtr tcp_pos_pub_;
-  rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
+  rclcpp::Publisher<tutorial_interfaces::msg::PosInfo>::SharedPtr tcp_pos_pub_;
+  // rclcpp::TimerBase::SharedPtr tcp_pos_timer_;
 
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr record_flag_pub_;
   rclcpp::TimerBase::SharedPtr record_flag_timer_;

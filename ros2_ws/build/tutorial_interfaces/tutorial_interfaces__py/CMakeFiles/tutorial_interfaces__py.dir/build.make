@@ -70,10 +70,12 @@ tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_introspection_c.c
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_c.c
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_falconpos.py
+tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pos_info.py
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints.py
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/__init__.py
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/srv/__init__.py
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c
+tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c
 tutorial_interfaces__py/CMakeFiles/tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c
 
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/humble/lib/rosidl_generator_py/rosidl_generator_py
@@ -90,6 +92,7 @@ rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesup
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/humble/share/rosidl_generator_py/resource/_srv_pkg_typesupport_entry_point.c.em
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/humble/share/rosidl_generator_py/resource/_srv.py.em
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/tutorial_interfaces/msg/Falconpos.idl
+rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/tutorial_interfaces/msg/PosInfo.idl
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/tutorial_interfaces/srv/AddThreeInts.idl
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/humble/share/geometry_msgs/msg/Accel.idl
 rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /opt/ros/humble/share/geometry_msgs/msg/AccelStamped.idl
@@ -162,6 +165,9 @@ rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesup
 rosidl_generator_py/tutorial_interfaces/msg/_falconpos.py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/msg/_falconpos.py
 
+rosidl_generator_py/tutorial_interfaces/msg/_pos_info.py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/msg/_pos_info.py
+
 rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints.py: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints.py
 
@@ -174,6 +180,9 @@ rosidl_generator_py/tutorial_interfaces/srv/__init__.py: rosidl_generator_py/tut
 rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c
 
+rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c
+
 rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c: rosidl_generator_py/tutorial_interfaces/_tutorial_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c
 
@@ -183,6 +192,8 @@ tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/_tutorial_inter
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/__init__.py
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_falconpos.py
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_falconpos_s.c
+tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pos_info.py
+tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/msg/_pos_info_s.c
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/srv/__init__.py
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints.py
 tutorial_interfaces__py: rosidl_generator_py/tutorial_interfaces/srv/_add_three_ints_s.c

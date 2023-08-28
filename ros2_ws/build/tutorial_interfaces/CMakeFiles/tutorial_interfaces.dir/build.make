@@ -67,6 +67,7 @@ include CMakeFiles/tutorial_interfaces.dir/compiler_depend.make
 include CMakeFiles/tutorial_interfaces.dir/progress.make
 
 CMakeFiles/tutorial_interfaces: /home/michael/HRI/ros2_ws/src/tutorial_interfaces/msg/Falconpos.msg
+CMakeFiles/tutorial_interfaces: /home/michael/HRI/ros2_ws/src/tutorial_interfaces/msg/PosInfo.msg
 CMakeFiles/tutorial_interfaces: /home/michael/HRI/ros2_ws/src/tutorial_interfaces/srv/AddThreeInts.srv
 CMakeFiles/tutorial_interfaces: rosidl_cmake/srv/AddThreeInts_Request.msg
 CMakeFiles/tutorial_interfaces: rosidl_cmake/srv/AddThreeInts_Response.msg

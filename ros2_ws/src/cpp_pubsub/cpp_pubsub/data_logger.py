@@ -5,31 +5,31 @@ from os.path import isfile
 #####################################################################################################
 class DataLogger:
 
-    def __init__(self, csv_dir, part_id, auto_id, traj_id, x_list, y_list, z_list, xerr_list, yerr_list, zerr_list, err_list,
-                 x_err, y_err, z_err, total_err):
+    def __init__(self, csv_dir, part_id, auto_id, traj_id, hxs, hys, hzs, rxs, rys, rzs, txs, tys, tzs, times, datetimes):
         
         self.csv_dir = csv_dir
         self.part_id = part_id
         self.auto_id = auto_id
         self.traj_id = traj_id
         
-        self.x_list = x_list
-        self.y_list = y_list
-        self.z_list = z_list
-        self.num_points = len(self.x_list)
+        self.hxs = hxs
+        self.hys = hys
+        self.hzs = hzs
+        self.num_points = len(self.hxs)
 
-        self.xerr_list = xerr_list
-        self.yerr_list = yerr_list
-        self.zerr_list = zerr_list
-        self.err_list = err_list
+        self.rxs = rxs
+        self.rys = rys
+        self.rzs = rzs
 
-        self.x_err = x_err
-        self.y_err = y_err
-        self.z_err = z_err
-        self.total_err = total_err
+        self.txs = txs
+        self.tys = tys
+        self.tzs = tzs
+
+        self.times = times
+        self.datetimes = datetimes
 
         self.header_file_name = self.csv_dir + "part" + str(self.part_id) + "_header.csv"
-        self.header_field_names = ['trial_number', 'auto_id', 'traj_id', 'x_error', 'y_error', 'z_error', 'total_error']
+        self.header_field_names = ['trial_number', 'auto_id', 'traj_id']
 
 
     ##############################################################################
@@ -57,11 +57,7 @@ class DataLogger:
             # dictionary that we want to add as a new row
             new_trial_data = {self.header_field_names[0]: trial_id,
                               self.header_field_names[1]: self.auto_id,
-                              self.header_field_names[2]: self.traj_id,
-                              self.header_field_names[3]: self.x_err,
-                              self.header_field_names[4]: self.y_err,
-                              self.header_field_names[5]: self.z_err,
-                              self.header_field_names[6]: self.total_err
+                              self.header_field_names[2]: self.traj_id
             }
 
             writer = DictWriter(f, fieldnames=self.header_field_names)
@@ -83,8 +79,8 @@ class DataLogger:
             wr = writer(file)
             # write datapoints [recorded trajectory points]
             for i in range(self.num_points):
-                wr.writerow([self.x_list[i], self.y_list[i], self.z_list[i], 
-                             self.xerr_list[i], self.yerr_list[i], self.zerr_list[i], self.err_list[i]])
+                wr.writerow([self.hxs[i], self.hys[i], self.hzs[i], self.rxs[i], self.rys[i], self.rzs[i],
+                             self.txs[i], self.tys[i], self.tzs[i], self.times[i], self.datetimes[i]])
 
             print("\nSuccesfully opened file %s to log data !!!\n" % self.data_file_name)
 

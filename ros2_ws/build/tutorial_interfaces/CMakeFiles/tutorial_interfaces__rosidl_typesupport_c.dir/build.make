@@ -76,6 +76,7 @@ rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: /opt/r
 rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: /opt/ros/humble/share/rosidl_typesupport_c/resource/msg__type_support.cpp.em
 rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: /opt/ros/humble/share/rosidl_typesupport_c/resource/srv__type_support.cpp.em
 rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: rosidl_adapter/tutorial_interfaces/msg/Falconpos.idl
+rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: rosidl_adapter/tutorial_interfaces/msg/PosInfo.idl
 rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: rosidl_adapter/tutorial_interfaces/srv/AddThreeInts.idl
 rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: /opt/ros/humble/share/geometry_msgs/msg/Accel.idl
 rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: /opt/ros/humble/share/geometry_msgs/msg/AccelStamped.idl
@@ -139,6 +140,9 @@ rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp: /opt/r
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating C type support dispatch for ROS interfaces"
 	/usr/bin/python3.10 /opt/ros/humble/lib/rosidl_typesupport_c/rosidl_typesupport_c --generator-arguments-file /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_typesupport_c__arguments.json --typesupports rosidl_typesupport_fastrtps_c rosidl_typesupport_introspection_c
 
+rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp: rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp
+	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp
+
 rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp: rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp
 
@@ -156,10 +160,24 @@ CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tu
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp -o CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp.s
 
+CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/flags.make
+CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o: rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp
+CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o -MF CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o.d -o CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o -c /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp
+
+CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp > CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.i
+
+CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp -o CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.s
+
 CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/flags.make
 CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o: rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp
 CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o -MF CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o.d -o CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o -c /home/michael/HRI/ros2_ws/build/tutorial_interfaces/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp
 
 CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.i: cmake_force
@@ -173,12 +191,14 @@ CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tu
 # Object files for target tutorial_interfaces__rosidl_typesupport_c
 tutorial_interfaces__rosidl_typesupport_c_OBJECTS = \
 "CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp.o" \
+"CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o" \
 "CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o"
 
 # External object files for target tutorial_interfaces__rosidl_typesupport_c
 tutorial_interfaces__rosidl_typesupport_c_EXTERNAL_OBJECTS =
 
 libtutorial_interfaces__rosidl_typesupport_c.so: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp.o
+libtutorial_interfaces__rosidl_typesupport_c.so: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp.o
 libtutorial_interfaces__rosidl_typesupport_c.so: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp.o
 libtutorial_interfaces__rosidl_typesupport_c.so: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/build.make
 libtutorial_interfaces__rosidl_typesupport_c.so: libtutorial_interfaces__rosidl_generator_c.so
@@ -192,7 +212,7 @@ libtutorial_interfaces__rosidl_typesupport_c.so: /opt/ros/humble/lib/libbuiltin_
 libtutorial_interfaces__rosidl_typesupport_c.so: /opt/ros/humble/lib/librosidl_runtime_c.so
 libtutorial_interfaces__rosidl_typesupport_c.so: /opt/ros/humble/lib/librcutils.so
 libtutorial_interfaces__rosidl_typesupport_c.so: CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX shared library libtutorial_interfaces__rosidl_typesupport_c.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX shared library libtutorial_interfaces__rosidl_typesupport_c.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -204,6 +224,7 @@ CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/clean:
 .PHONY : CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/clean
 
 CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/depend: rosidl_typesupport_c/tutorial_interfaces/msg/falconpos__type_support.cpp
+CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/depend: rosidl_typesupport_c/tutorial_interfaces/msg/pos_info__type_support.cpp
 CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/depend: rosidl_typesupport_c/tutorial_interfaces/srv/add_three_ints__type_support.cpp
 	cd /home/michael/HRI/ros2_ws/build/tutorial_interfaces && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/michael/HRI/ros2_ws/src/tutorial_interfaces /home/michael/HRI/ros2_ws/src/tutorial_interfaces /home/michael/HRI/ros2_ws/build/tutorial_interfaces /home/michael/HRI/ros2_ws/build/tutorial_interfaces /home/michael/HRI/ros2_ws/build/tutorial_interfaces/CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/tutorial_interfaces__rosidl_typesupport_c.dir/depend

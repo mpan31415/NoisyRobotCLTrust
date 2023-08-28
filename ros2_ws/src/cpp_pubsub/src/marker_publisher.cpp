@@ -11,17 +11,21 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "tutorial_interfaces/msg/falconpos.hpp"
+#include "tutorial_interfaces/msg/pos_info.hpp"
 
 using namespace std::chrono_literals;
 
 
 /////////  functions to show markers in Rviz  /////////
+void generate_ref_marker(visualization_msgs::msg::Marker &ref_marker, double x, double y, double z);
 void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker);
 visualization_msgs::msg::Marker generate_progress(double percentage, double line_width, std::vector<double> center, double height, double width, int id);
 
 void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points,
                           double spiral_r, double spiral_h, bool rotate, int axis, double angle);
 void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::vector<double> center, double height, double width);
+
+visualization_msgs::msg::Marker generate_cleaner_marker();
 
 void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
 void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
@@ -41,13 +45,17 @@ class MarkerPublisher : public rclcpp::Node
     std::vector<double> origin {0.4559, 0.0, 0.3846};
     const int max_points = 200;
 
+    // for the reference tcp marker
+    std::vector<double> ref_pos {0.0, 0.0, 0.0};
+
     // for the progress bar
-    std::vector<double> bar_center {-0.2, 0.0, 1.0};
+    // std::vector<double> bar_center {-0.2, 0.0, 1.0};
+    std::vector<double> bar_center {0.3, 0.0, 0.05};
     double bar_width {0.5};
     double bar_height {0.1};
 
     const int pub_freq = 20;   // [Hz]
-    const int control_freq = 1000;    // [Hz]
+    const int control_freq = 200;    // [Hz]
     const int max_smoothing_time = 5;   // [seconds]
     const double max_smoothing_count = control_freq * max_smoothing_time;
 
@@ -84,16 +92,26 @@ class MarkerPublisher : public rclcpp::Node
         case 5: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, true, 1, 70); break;
       }
 
-      // display the empty progress bar
+      // generate the empty progress bar
       generate_progress_bar(progress_bar_, bar_center, bar_height, bar_width);
 
       // create the marker publisher
       marker_timer_ = this->create_wall_timer(20ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 20 Hz
       marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 10);
 
+      // reference tcp position subscriber
+      ref_sub_ = this->create_subscription<tutorial_interfaces::msg::PosInfo>(
+      "tcp_position", 10, std::bind(&MarkerPublisher::ref_callback, this, std::placeholders::_1));
+
       // controller count subscriber
       count_sub_ = this->create_subscription<std_msgs::msg::Float64>(
       "controller_count", 10, std::bind(&MarkerPublisher::count_callback, this, std::placeholders::_1));
+
+      // marker cleaner & wipe all existing markers
+      auto cleaner_marker_arr = visualization_msgs::msg::MarkerArray();
+      auto cleaner_marker = generate_cleaner_marker();
+      cleaner_marker_arr.markers.push_back(cleaner_marker);
+      marker_pub_->publish(cleaner_marker_arr);
     }
 
 
@@ -106,8 +124,12 @@ class MarkerPublisher : public rclcpp::Node
       // add in the certain ones
       marker_array_msg.markers.push_back(progress_bar_);
       marker_array_msg.markers.push_back(traj_marker_);
+
       generate_tcp_marker(tcp_marker_);
       marker_array_msg.markers.push_back(tcp_marker_);
+      
+      generate_ref_marker(ref_marker_, ref_pos.at(0), ref_pos.at(1), ref_pos.at(2));
+      marker_array_msg.markers.push_back(ref_marker_);
 
       // add progress bar if needed
       if (controller_count > 0.0 && controller_count < max_smoothing_count) {
@@ -124,6 +146,13 @@ class MarkerPublisher : public rclcpp::Node
 
     }
 
+    void ref_callback(const tutorial_interfaces::msg::PosInfo & msg) 
+    { 
+      ref_pos.at(0) = msg.robot_position[0];
+      ref_pos.at(1) = msg.robot_position[1];
+      ref_pos.at(2) = msg.robot_position[2];
+    }
+
     void count_callback(const std_msgs::msg::Float64 & msg) { controller_count = msg.data; }
 
     void print_params() {
@@ -138,13 +167,42 @@ class MarkerPublisher : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr marker_timer_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
+    rclcpp::Subscription<tutorial_interfaces::msg::PosInfo>::SharedPtr ref_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr count_sub_;
 
     visualization_msgs::msg::Marker traj_marker_;
+    visualization_msgs::msg::Marker ref_marker_;
     visualization_msgs::msg::Marker tcp_marker_;
     visualization_msgs::msg::Marker progress_bar_;
     
 };
+
+
+/////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE MARKER ///////////////////////////////////
+void generate_ref_marker(visualization_msgs::msg::Marker &ref_marker, double x, double y, double z) 
+{
+  // fill-in the tcp_marker message
+  ref_marker.header.frame_id = "/panda_link0";
+  ref_marker.header.stamp = rclcpp::Clock().now();
+  ref_marker.ns = "marker_publisher";
+  ref_marker.action = visualization_msgs::msg::Marker::ADD;
+  ref_marker.id = 0;
+  ref_marker.type = visualization_msgs::msg::Marker::SPHERE;
+
+  // diameters of the sphere in x, y, z directions [cm]
+  ref_marker.scale.x = 0.015;
+  ref_marker.scale.y = 0.015;
+  ref_marker.scale.z = 0.015;
+
+  // sphere is green
+  ref_marker.color.g = 1.0;
+  ref_marker.color.a = 1.0;
+  
+  // zero offset from the panda tcp link frame
+  ref_marker.pose.position.x = x;
+  ref_marker.pose.position.y = y;
+  ref_marker.pose.position.z = z;
+}
 
 
 /////////////////////////////////// FUNCTIONS TO GENERATE TCP MARKER ///////////////////////////////////
@@ -155,7 +213,7 @@ void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker)
   tcp_marker.header.stamp = rclcpp::Clock().now();
   tcp_marker.ns = "marker_publisher";
   tcp_marker.action = visualization_msgs::msg::Marker::ADD;
-  tcp_marker.id = 0;
+  tcp_marker.id = 1;
   tcp_marker.type = visualization_msgs::msg::Marker::SPHERE;
 
   // diameters of the sphere in x, y, z directions [cm]
@@ -198,13 +256,13 @@ visualization_msgs::msg::Marker generate_progress(double percentage, double line
   geometry_msgs::msg::Point top;
   geometry_msgs::msg::Point bottom;
 
-  top.x = center.at(0) + 0.0; 
+  top.x = center.at(0) - height/2; 
   top.y = center.at(1) - (width/2) + percentage * width;
-  top.z = center.at(2) + height/2;
+  top.z = center.at(2);
 
-  bottom.x = center.at(0) + 0.0;
+  bottom.x = center.at(0) + height/2;
   bottom.y = center.at(1) - (width/2) + percentage * width;
-  bottom.z = center.at(2) - height/2;
+  bottom.z = center.at(2);
 
   progress.points.push_back(top);
   progress.points.push_back(bottom);
@@ -222,7 +280,7 @@ void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vec
   traj_marker.header.stamp = rclcpp::Clock().now();
   traj_marker.ns = "marker_publisher";
   traj_marker.action = visualization_msgs::msg::Marker::ADD;
-  traj_marker.id = 1;
+  traj_marker.id = 2;
   traj_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
 
   // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
@@ -269,7 +327,7 @@ void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::v
   progress_bar.header.stamp = rclcpp::Clock().now();
   progress_bar.ns = "marker_publisher";
   progress_bar.action = visualization_msgs::msg::Marker::ADD;
-  progress_bar.id = 2;
+  progress_bar.id = 3;
   progress_bar.type = visualization_msgs::msg::Marker::LINE_LIST;
 
   // width of line 
@@ -285,10 +343,10 @@ void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::v
   geometry_msgs::msg::Point br;
   geometry_msgs::msg::Point bl;
 
-  tl.x = center.at(0) + 0.0; tl.y = center.at(1) - width/2; tl.z = center.at(2) + height/2;
-  tr.x = center.at(0) + 0.0; tr.y = center.at(1) + width/2; tr.z = center.at(2) + height/2;
-  br.x = center.at(0) + 0.0; br.y = center.at(1) + width/2; br.z = center.at(2) - height/2;
-  bl.x = center.at(0) + 0.0; bl.y = center.at(1) - width/2; bl.z = center.at(2) - height/2;
+  tl.x = center.at(0) - height/2; tl.y = center.at(1) - width/2; tl.z = center.at(2);
+  tr.x = center.at(0) - height/2; tr.y = center.at(1) + width/2; tr.z = center.at(2);
+  br.x = center.at(0) + height/2; br.y = center.at(1) + width/2; br.z = center.at(2);
+  bl.x = center.at(0) + height/2; bl.y = center.at(1) - width/2; bl.z = center.at(2);
 
   // add them sequentially, forming line segments between each consecutive pair
   progress_bar.points.push_back(tl);
@@ -299,6 +357,22 @@ void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::v
   progress_bar.points.push_back(bl);
   progress_bar.points.push_back(bl);
   progress_bar.points.push_back(tl);
+}
+
+
+/////////////////////////////////// FUNCTIONS TO CLEAR ALL MARKERS ///////////////////////////////////
+visualization_msgs::msg::Marker generate_cleaner_marker() 
+{ 
+  auto cleaner_marker = visualization_msgs::msg::Marker();
+
+  // fill-in the cleaner_marker message
+  cleaner_marker.header.frame_id = "/panda_link0";
+  cleaner_marker.header.stamp = rclcpp::Clock().now();
+  cleaner_marker.ns = "marker_publisher";
+  cleaner_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+  cleaner_marker.id = 4;
+
+  return cleaner_marker;
 }
 
 
