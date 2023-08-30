@@ -69,6 +69,9 @@ double get_min(double a, double b);
 
 void print_joint_vals(std::vector<double>& joint_vals);
 
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
+
 
 /////////////// DEFINITION OF NODE CLASS //////////////
 
@@ -84,7 +87,7 @@ public:
   int auto_id {0};
   int traj_id {0};
   
-  std::vector<double> origin {0.5059, 0.0, 0.3846}; //////// can change the task-space origin point! ////////
+  std::vector<double> origin {0.4559, 0.0, 0.3846}; //////// can change the task-space origin point! ////////
 
   std::vector<double> human_offset {0.0, 0.0, 0.0};
   std::vector<double> robot_offset {0.0, 0.0, 0.0};
@@ -95,7 +98,7 @@ public:
   bool control = false;
   
   const int control_freq = 500;   // the rate at which the "controller_publisher" function is called in [Hz]
-  const int tcp_pub_frequency = 40;   // in [Hz]
+  const int tcp_pub_frequency = 20;   // in [Hz]
 
   // step 1: prep-time
   const int prep_time = 5;    // seconds
@@ -111,7 +114,6 @@ public:
   const int max_smoothing_count = control_freq * smoothing_time;
   const int float_time = 2;     // time to float at starting position [seconds]
 
-  // IMPORTANT: BIG BOSS COUNTER HERE
   int count = 0;
 
   // alpha values = amount of HUMAN INPUT, in the range [0, 1]
@@ -124,19 +126,19 @@ public:
   int max_recording_count = control_freq * traj_duration;
   bool record_flag = false;
 
+  const int max_traj_points = tcp_pub_frequency * traj_duration;
+  int traj_points_sent = 0;
+
   // for robot trajectory following
   double t_param = 0.0;
 
-  // sine curve parameters (initialization)
-  int pa = 0;
-  int pb = 0;
-  int pc = 0;
-  double ps = 0.0;
-  double ph = 0.0;
+  // for transformations
+  std::vector<std::vector<double>> trans_matrix {{1,0,0}, {0,1,0}, {0,0,1}};   // initialized as the identity matrix
+  std::vector<double> pre_point {0, 0, 0};
 
-  double depth = 0.1;
-  double width = 0.3;
-  double height = 0.1;
+  // for the spiral dimensions
+  double spiral_r = 0.0;
+  double spiral_h = 0.0;
 
 
   ////////////////////////////////////////////////////////////////////////
@@ -167,14 +169,14 @@ public:
     ay = alphas_dict.at(auto_id).at(1);
     az = alphas_dict.at(auto_id).at(2);
 
-    // write the sine curve parameters
+    // get the spiral dimensions & the corresponding transformation matrix
     switch (traj_id) {
-      case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.4; break;
-      case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.3; break;
-      case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.3; break;
-      case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2; break;
-      case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2; break;
-      case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2; break;
+      case 0: spiral_r = 0.1; spiral_h = 0.2; break;
+      case 1: get_rotation_matrix(1, 90, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 2: get_rotation_matrix(2, 90, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 3: get_rotation_matrix(1, 30, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 4: get_rotation_matrix(2, 30, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 5: get_rotation_matrix(1, 70, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
     }
 
     // joint controller publisher & timer
@@ -183,14 +185,11 @@ public:
 
     // tcp position publisher & timer
     tcp_pos_pub_ = this->create_publisher<tutorial_interfaces::msg::PosInfo>("tcp_position", 10);
-    // tcp_pos_timer_ = this->create_wall_timer(25ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 40 Hz
+    // tcp_pos_timer_ = this->create_wall_timer(50ms, std::bind(&RealController::tcp_pos_publisher, this));    // publishes at 20 Hz
 
     // recording flag publisher & timer
     record_flag_pub_ = this->create_publisher<std_msgs::msg::Bool>("record", 10);
     record_flag_timer_ = this->create_wall_timer(2ms, std::bind(&RealController::record_flag_publisher, this));    // publishes at 500 Hz
-
-    // second_last_point publisher
-    last_point_pub_ = this->create_publisher<std_msgs::msg::Bool>("last_point", 10);  // publishes only once
 
     // controller count publisher, same frequency as the controller
     count_pub_ = this->create_publisher<std_msgs::msg::Float64>("controller_count", 10);
@@ -246,7 +245,7 @@ private:
       compute_ik(tcp_pos, curr_joint_vals, ik_joint_vals);
 
       ///////////// publish the tcp position message /////////////
-      if (record_flag && ((count - max_smoothing_count) % (control_freq / 40) == 0)) RealController::tcp_pos_publisher();
+      if (record_flag && ((count - max_smoothing_count) % (control_freq / 20) == 0)) RealController::tcp_pos_publisher();
 
       ///////// initial smooth transitioning from current position to Falcon-mapped position /////////
       count++;  // increase count
@@ -278,16 +277,10 @@ private:
       q_desired.position = message_joint_vals;
       controller_pub_->publish(q_desired);
 
-      // set the record flag as true
-      if ((count == max_smoothing_count) && (!record_flag)) {
+      // set the record flag as either true
+      if ((count == max_smoothing_count) && (!record_flag) && (traj_points_sent == 0)) {
         record_flag = true;
         std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => TRUE =======================\n\n\n\n\n\n" << std::endl;
-      }
-
-      // set the record flag as false
-      if ((count == max_smoothing_count + max_recording_count) && (record_flag == true)) {
-        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
-        record_flag = false; 
       }
 
       ///////////// publish the controller count message /////////////
@@ -300,13 +293,6 @@ private:
   ///////////////////////////////////// TCP POSITION PUBLISHER /////////////////////////////////////
   void tcp_pos_publisher()
   { 
-    if (count > max_smoothing_count + max_recording_count - tcp_pub_frequency) {
-      auto lp = std_msgs::msg::Bool();
-      lp.data = true;
-      std::cout << "\n\n\n\n\n\n======================= SETTING LAST POINT TO => TRUE =======================\n\n\n\n\n\n" << std::endl;
-      last_point_pub_->publish(lp);
-    }
-
     // note: this is in meters
     auto message = tutorial_interfaces::msg::PosInfo();
 
@@ -328,10 +314,15 @@ private:
       tcp_pos.at(2)
     };
 
-    message.time_from_start = (double) (count - max_smoothing_count) / max_recording_count * 10;    // out of total of 10 seconds
-
     tcp_pos_pub_->publish(message);
-    
+
+    if (record_flag) traj_points_sent++;
+    if (traj_points_sent == max_traj_points) {
+      if (record_flag == true) {
+        std::cout << "\n\n\n\n\n\n======================= RECORD FLAG IS SET TO => FALSE =======================\n\n\n\n\n\n" << std::endl;
+      }
+      record_flag = false; 
+    }
   }
 
   ///////////////////////////////////// TRAJ RECORD FLAG PUBLISHER /////////////////////////////////////
@@ -370,14 +361,22 @@ private:
 
   /////////////////////////////// robot control function ///////////////////////////////
   void get_robot_control(double t) 
-  { 
-    // make sure within bounds of [0, 2pi]
-    if (t < 0.0) t = 0.0;
-    if (t > 2*M_PI) t = 2*M_PI;
-
-    robot_offset.at(0) = abs(t-M_PI) / M_PI * depth - (depth/2);
-    robot_offset.at(1) = t / (2*M_PI) * width - (width/2);
-    robot_offset.at(2) = (ph*height) * (sin(pa*(t+ps)) + sin(pb*(t+ps)) + sin(pc*(t+ps)));
+  {
+    if (t < 0.0) {
+      pre_point = {0.0, spiral_r, -spiral_h/2};
+      matrix_mult_vector(trans_matrix, pre_point, robot_offset);
+      return;
+    }
+    if (t > 2*M_PI) {
+      pre_point = {0.0, spiral_r, spiral_h/2};
+      matrix_mult_vector(trans_matrix, pre_point, robot_offset);
+      return;
+    }
+    double x = spiral_r * sin(t*2);
+    double y = spiral_r * cos(t*2);
+    double z = -spiral_h/2 + t/(2*M_PI) * spiral_h;
+    pre_point = {x, y, z};
+    matrix_mult_vector(trans_matrix, pre_point, robot_offset);
   }
 
   ///////////////////////////////////// FUNCTION TO PRINT PARAMETERS /////////////////////////////////////
@@ -401,8 +400,6 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr record_flag_pub_;
   rclcpp::TimerBase::SharedPtr record_flag_timer_;
 
-  rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr last_point_pub_;
-
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr count_pub_;
 
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_vals_sub_;
@@ -412,6 +409,30 @@ private:
 };
 
 
+
+/////////////////////////// util functions ///////////////////////////
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T)
+{    
+  double th = angle / 180 * M_PI;
+  switch (axis) {
+      case 1: T.at(0) = {1,0,0}; T.at(1) = {0,cos(th),-sin(th)}; T.at(2) = {0,sin(th),cos(th)}; break;
+      case 2: T.at(0) = {cos(th),0,sin(th)}; T.at(1) = {0,1,0}; T.at(2) = {-sin(th),0,cos(th)}; break;
+      case 3: T.at(0) = {cos(th),-sin(th),0}; T.at(1) = {sin(th),cos(th),0}; T.at(2) = {0,0,1}; break;
+  }
+}
+
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result) 
+{   
+  for (size_t i=0; i<mat.size(); i++) {
+      auto row = mat.at(i);
+      double sum {0};
+      for (size_t j=0; j<row.size(); j++) {
+          sum += row.at(j) * vec.at(j);
+      }
+      result.at(i) = sum;
+  }
+}
 
 /////////////////////////////// my own ik function ///////////////////////////////
 

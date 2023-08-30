@@ -15,6 +15,11 @@
 using namespace std::chrono_literals;
 
 
+//////////////////////// UTILS FUNCTIONS //////////////////////// 
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
+
+
 /////////////// DEFINITION OF PUBLISHER CLASS //////////////
 
 class PositionTalker : public rclcpp::Node
@@ -45,10 +50,13 @@ public:
   // guide:
   // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
   // positive axes directions are {out, right, up}
-  
 
-  // sine curve's first point is currently all the same
-  std::vector<double> first_point {0.05, -0.15, 0.0};
+  // for spiral dimensions and rotation
+  std::vector<std::vector<double>> trans_matrix {{1,0,0}, {0,1,0}, {0,0,1}};   // initialized as the identity matrix
+  double spiral_r = 0.0;
+  double spiral_h = 0.0;
+  std::vector<double> pre_point {0.00, 0.00, 0.00};
+  std::vector<double> post_point {0.00, 0.00, 0.00};
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,8 +78,22 @@ public:
     traj_id = std::stoi(params.at(3).value_to_string().c_str());
     print_params();
 
+    // get the spiral dimensions & the corresponding transformation matrix
+    switch (traj_id) {
+      case 0: spiral_r = 0.1; spiral_h = 0.2; break;
+      case 1: get_rotation_matrix(1, 90, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 2: get_rotation_matrix(2, 90, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 3: get_rotation_matrix(1, 30, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 4: get_rotation_matrix(2, 30, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+      case 5: get_rotation_matrix(1, 70, trans_matrix); spiral_r = 0.1; spiral_h = 0.2; break;
+    }
+
+    // get the first trajectory point
+    pre_point = {0.0, spiral_r, -spiral_h/2};
+    matrix_mult_vector(trans_matrix, pre_point, post_point);
+
     // update centering position using "post_point" computed above
-    for (size_t i=0; i<3; i++) centering.at(i) = first_point.at(i) / mapping_ratio;
+    for (size_t i=0; i<3; i++) centering.at(i) = post_point.at(i) / mapping_ratio;
 
     // publisher
     publisher_ = this->create_publisher<tutorial_interfaces::msg::Falconpos>("falcon_position", 10);
@@ -174,6 +196,33 @@ private:
   bool reset = false;
 
 };
+
+
+
+/////////////////////////// util functions ///////////////////////////
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T)
+{    
+  double th = angle / 180 * M_PI;
+  switch (axis) {
+      case 1: T.at(0) = {1,0,0}; T.at(1) = {0,cos(th),-sin(th)}; T.at(2) = {0,sin(th),cos(th)}; break;
+      case 2: T.at(0) = {cos(th),0,sin(th)}; T.at(1) = {0,1,0}; T.at(2) = {-sin(th),0,cos(th)}; break;
+      case 3: T.at(0) = {cos(th),-sin(th),0}; T.at(1) = {sin(th),cos(th),0}; T.at(2) = {0,0,1}; break;
+  }
+}
+
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result) 
+{   
+  for (size_t i=0; i<mat.size(); i++) {
+      auto row = mat.at(i);
+      double sum {0};
+      for (size_t j=0; j<row.size(); j++) {
+          sum += row.at(j) * vec.at(j);
+      }
+      result.at(i) = sum;
+  }
+}
+
 
 
 

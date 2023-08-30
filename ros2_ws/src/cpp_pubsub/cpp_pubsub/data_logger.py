@@ -5,7 +5,7 @@ from os.path import isfile
 #####################################################################################################
 class DataLogger:
 
-    def __init__(self, csv_dir, part_id, auto_id, traj_id, hxs, hys, hzs, rxs, rys, rzs, txs, tys, tzs, times, datetimes):
+    def __init__(self, csv_dir, part_id, auto_id, traj_id, hxs, hys, hzs, rxs, rys, rzs, txs, tys, tzs, times_from_start, times, datetimes):
         
         self.csv_dir = csv_dir
         self.part_id = part_id
@@ -25,6 +25,7 @@ class DataLogger:
         self.tys = tys
         self.tzs = tzs
 
+        self.times_from_start = times_from_start
         self.times = times
         self.datetimes = datetimes
 
@@ -80,7 +81,7 @@ class DataLogger:
             # write datapoints [recorded trajectory points]
             for i in range(self.num_points):
                 wr.writerow([self.hxs[i], self.hys[i], self.hzs[i], self.rxs[i], self.rys[i], self.rzs[i],
-                             self.txs[i], self.tys[i], self.tzs[i], self.times[i], self.datetimes[i]])
+                             self.txs[i], self.tys[i], self.tzs[i], self.times_from_start[i], self.times[i], self.datetimes[i]])
 
             print("\nSuccesfully opened file %s to log data !!!\n" % self.data_file_name)
 

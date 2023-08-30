@@ -1,6 +1,30 @@
-from numpy import matrix, pi, ndarray, linspace, sin, cos, stack, asarray
+from numpy import matrix, pi, ndarray, linspace, sin, cos, stack, asarray, absolute
 # from math import sin, cos
 import matplotlib.pyplot as plt
+
+
+####################################################################################
+def get_sine_ref_points(n_points: int, a, b, c, s, h, height, width, depth, origin: list[float]):
+
+    ampz = h * height
+
+    theta = linspace(0, 2*pi, n_points)
+    npx = absolute(asarray(theta-pi))/pi*depth - (depth/2)
+    npy = theta/(2*pi)*width - (width/2)
+    npz = ampz * (sin(a*(theta+s)) + sin(b*(theta+s)) + sin(c*(theta+s)))
+
+    # extract each dimension vector and convert to python list
+    x = npx.tolist()
+    y = npy.tolist()
+    z = npz.tolist()
+
+    for i in range(n_points):
+        x[i] += origin[0]
+        y[i] += origin[1]
+        z[i] += origin[2]
+
+    return x, y, z
+
 
 
 ####################################################################################
@@ -20,7 +44,7 @@ def get_rotation_matrix(axis: str, angle: float) -> matrix:
 
 
 ####################################################################################
-def get_reference_points(n_points: int, r: float, h: float, axis: str, angle: float, origin: list[float]):
+def get_spiral_ref_points(n_points: int, r: float, h: float, axis: str, angle: float, origin: list[float]):
 
     theta = linspace(0, 2 * pi, n_points)
     old_x = r * sin(theta * 2)

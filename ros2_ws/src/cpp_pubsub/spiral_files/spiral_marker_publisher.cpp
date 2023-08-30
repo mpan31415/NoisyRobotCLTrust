@@ -22,11 +22,13 @@ void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker);
 visualization_msgs::msg::Marker generate_progress(double percentage, double line_width, std::vector<double> center, double height, double width, int id);
 
 void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points,
-                          double pa, double pb, double pc, double ps, double ph, double height, double width, double depth);
-
+                          double spiral_r, double spiral_h, bool rotate, int axis, double angle);
 void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::vector<double> center, double height, double width);
 
 visualization_msgs::msg::Marker generate_cleaner_marker();
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T);       // axes are: {1-x, 2-y, 3-z}
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result);
 
 
 class MarkerPublisher : public rclcpp::Node
@@ -40,7 +42,7 @@ class MarkerPublisher : public rclcpp::Node
     int traj_id {0};
     
      //////// KEEP CONSISTENT WITH REAL CONTROLLER ////////
-    std::vector<double> origin {0.5059, 0.0, 0.3846};
+    std::vector<double> origin {0.4559, 0.0, 0.3846};
     const int max_points = 200;
 
     // for the reference tcp marker
@@ -64,17 +66,6 @@ class MarkerPublisher : public rclcpp::Node
     double controller_count {0.0};
     
     std::vector<visualization_msgs::msg::Marker> progress_bar_lines;
-
-    // sine curve parameters (initialization)
-    int pa = 0;
-    int pb = 0;
-    int pc = 0;
-    double ps = 0.0;
-    double ph = 0.0;
-    
-    double traj_height = 0.1;
-    double traj_width = 0.3;
-    double traj_depth = 0.1;
   
 
     MarkerPublisher()
@@ -91,18 +82,15 @@ class MarkerPublisher : public rclcpp::Node
       traj_id = std::stoi(params.at(2).value_to_string().c_str());
       print_params();
 
-      // write the sine curve parameters
+      // display the reference trajectory
       switch (traj_id) {
-        case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.4; break;
-        case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.3; break;
-        case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.3; break;
-        case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2; break;
-        case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2; break;
-        case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2; break;
+        case 0: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, false, 1, 0); break;
+        case 1: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, true, 1, 90); break;
+        case 2: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, true, 2, 90); break;
+        case 3: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, true, 1, 30); break;
+        case 4: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, true, 2, 30); break;
+        case 5: generate_traj_marker(traj_marker_, origin, max_points, 0.1, 0.2, true, 1, 70); break;
       }
-
-      // generate the trajectory marker
-      generate_traj_marker(traj_marker_, origin, max_points, pa, pb, pc, ps, ph, traj_height, traj_width, traj_depth);
 
       // generate the empty progress bar
       generate_progress_bar(progress_bar_, bar_center, bar_height, bar_width);
@@ -285,7 +273,7 @@ visualization_msgs::msg::Marker generate_progress(double percentage, double line
 
 /////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE TRAJECTORY MARKERS ///////////////////////////////////
 void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points,
-                          double pa, double pb, double pc, double ps, double ph, double height, double width, double depth)
+                          double spiral_r, double spiral_h, bool rotate, int axis, double angle)
 {
   // fill-in the traj_marker message
   traj_marker.header.frame_id = "/panda_link0";
@@ -302,19 +290,29 @@ void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vec
   traj_marker.color.b = 1.0;
   traj_marker.color.a = 1.0;
 
+  // get rotation matrix
+  std::vector<std::vector<double>> trans_matrix {{1,0,0},{0,1,0},{0,0,1}};
+  if (rotate) get_rotation_matrix(axis, angle, trans_matrix);
+
+  std::vector<double> pre_point {0,0,0};
+  std::vector<double> post_point {0,0,0};
+
   // Create the vertices for the points and lines
   for (int count=0; count<=max_points; count++) {
 
-    double t = (double) count / max_points * 2 * M_PI;   // parametrized in the range [0, 2pi]
+    double t = (double) count / max_points * 2 * M_PI;   // for circle, parametrized in the range [0, 2pi]
 
-    double x = abs(t-M_PI) / M_PI * depth - (depth/2);
-    double y = t / (2*M_PI) * width - (width/2);
-    double z = (ph*height) * (sin(pa*(t+ps)) + sin(pb*(t+ps)) + sin(pc*(t+ps)));
+    double x = spiral_r * sin(t*2);
+    double y = spiral_r * cos(t*2);
+    double z = -spiral_h/2 + t/(2*M_PI) * spiral_h;
+
+    pre_point = {x, y, z};
+    matrix_mult_vector(trans_matrix, pre_point, post_point);
 
     geometry_msgs::msg::Point p;
-    p.x = x + origin.at(0);
-    p.y = y + origin.at(1);
-    p.z = z + origin.at(2);
+    p.x = post_point.at(0) + origin.at(0);
+    p.y = post_point.at(1) + origin.at(1);
+    p.z = post_point.at(2) + origin.at(2);
 
     traj_marker.points.push_back(p);
   }
@@ -375,6 +373,32 @@ visualization_msgs::msg::Marker generate_cleaner_marker()
   cleaner_marker.id = 4;
 
   return cleaner_marker;
+}
+
+
+
+/////////////////////////// util functions ///////////////////////////
+
+void get_rotation_matrix(int axis, double angle, std::vector<std::vector<double>> &T)
+{    
+  double th = angle / 180 * M_PI;
+  switch (axis) {
+      case 1: T.at(0) = {1,0,0}; T.at(1) = {0,cos(th),-sin(th)}; T.at(2) = {0,sin(th),cos(th)}; break;
+      case 2: T.at(0) = {cos(th),0,sin(th)}; T.at(1) = {0,1,0}; T.at(2) = {-sin(th),0,cos(th)}; break;
+      case 3: T.at(0) = {cos(th),-sin(th),0}; T.at(1) = {sin(th),cos(th),0}; T.at(2) = {0,0,1}; break;
+  }
+}
+
+void matrix_mult_vector(std::vector<std::vector<double>> &mat, std::vector<double> &vec, std::vector<double> &result) 
+{   
+  for (size_t i=0; i<mat.size(); i++) {
+      auto row = mat.at(i);
+      double sum {0};
+      for (size_t j=0; j<row.size(); j++) {
+          sum += row.at(j) * vec.at(j);
+      }
+      result.at(i) = sum;
+  }
 }
 
 

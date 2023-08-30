@@ -1,7 +1,7 @@
 from pandas import read_csv
 import matplotlib.pyplot as plt
 
-file_name = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/part0/trial4.csv"
+file_name = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/part0/trial5.csv"
 
 df = read_csv(file_name, header=None)
 
