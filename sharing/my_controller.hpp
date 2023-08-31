@@ -48,6 +48,10 @@ class MyController : public controller_interface::ControllerInterface {
 
   int wait_time_;
   Vector7d tau_d_calculated_;
+
+  int empty_count_;
+  int total_count_;
+  bool counting_;
   
 
   void updateJointStates();

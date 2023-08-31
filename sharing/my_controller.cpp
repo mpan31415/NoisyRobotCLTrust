@@ -62,7 +62,7 @@ controller_interface::return_type MyController::update(
 
   rclcpp::WaitSet wait_set({}, std::vector<rclcpp::GuardCondition::SharedPtr>{guard_condition1_});
   wait_set.add_subscription(sub1_);
-  auto wait_result = wait_set.wait(std::chrono::microseconds(wait_time_));    //// this should be <= (1000 / controller's update frequency)
+  auto wait_result = wait_set.wait(std::chrono::microseconds(wait_time_));
 
   if (wait_result.kind() == rclcpp::WaitResultKind::Ready) {
     size_t subscriptions_num = wait_set.get_rcl_wait_set().size_of_subscriptions;
@@ -78,6 +78,9 @@ controller_interface::return_type MyController::update(
           auto poses = msg.position;
           for (int i=0; i<7; i++) q_desired(i) = poses.at(i);    /// copy into the Eigen vector "q_desired"
 
+          // print the q_desired vector
+          for (int i=0; i<7; i++) std::cout << "  " << q_desired(i);
+          std::cout << std::endl;
 
         } else {
           RCLCPP_INFO(node_->get_logger(), "subscription %zu: No message", i + 1);
@@ -94,17 +97,15 @@ controller_interface::return_type MyController::update(
   wait_set.remove_subscription(sub1_);
 
 
-
+  if (got_message && !counting_) counting_ = true;
+  
+  if (counting_) total_count_++;
 
   /////////////////////////////// FRANKA CONTROLLER SECTION ///////////////////////////////
 
   updateJointStates();
 
   if (got_message) {
-
-    // print the q_desired vector
-    for (int i=0; i<7; i++) std::cout << "    " << q_desired(i);
-    std::cout << "\n" << std::endl;
 
     const double kAlpha = 0.99;
     dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
@@ -113,24 +114,37 @@ controller_interface::return_type MyController::update(
     withinLimits();
 
     if (controlling_) {
+      // std::cout << "   Controlling   " << std::endl;
       for (int i = 0; i < 7; ++i) {
         command_interfaces_[i].set_value(tau_d_calculated_(i));
+        // command_interfaces_[i].set_value(0);
       }
     } else {
+      // std::cout << "\n\n\n Not Controlling \n\n\n" << std::endl;
       for (int i = 0; i < 7; ++i) command_interfaces_[i].set_value(0);
     }
 
   } else {
 
+    if (counting_) empty_count_++;
+
     if (controlling_) {
       for (int i = 0; i < 7; ++i) {
         command_interfaces_[i].set_value(tau_d_calculated_(i));
+        // command_interfaces_[i].set_value(0);
       }
     } else {
       for (int i = 0; i < 7; ++i) command_interfaces_[i].set_value(0);
     }
 
   }
+
+  std::cout << "The current empty message rate is " << (double) empty_count_ / total_count_ << std::endl;
+
+  // extra printing of joint torques sent
+  // std::cout << " " << tau_d_calculated_(1);
+
+
   return controller_interface::return_type::OK;
 }
 
@@ -149,10 +163,14 @@ CallbackReturn MyController::on_init() {
   torque_limits_ = {30, 30, 30, 30, 10, 10, 10};
   controlling_ = true;
 
-  wait_time_ = 1500;    // [microseconds]     //// this should be <= (1000 / controller's update frequency) * 1000
+  wait_time_ = 1900;    // [microseconds]     //// this should be <= (1000 / controller yaml's update frequency) * 1000
   for (int i = 0; i < 7; ++i) {
     tau_d_calculated_(i) = 0;
   }
+
+  empty_count_ = 0;
+  total_count_ = 0;
+  counting_ = false;
 
 
   try {
@@ -226,6 +244,11 @@ void MyController::updateJointStates() {
 
     q_(i) = position_interface.get_value();
     dq_(i) = velocity_interface.get_value();
+
+
+    // extra: printing joint values as read by the controller
+    // for (int i=0; i<7; i++) std::cout << q_(i);
+    // std::cout << std::endl;
   }
 }
 
@@ -234,6 +257,7 @@ void MyController::updateJointStates() {
 void MyController::withinLimits() {
   for (int i=0; i<7; i++) {
     if (tau_d_calculated_(i) > torque_limits_(i)) {
+      // std::cout << "\n\n\n violated torque limits! \n\n\n" << std::endl;
       controlling_ = false;
     }
   }
