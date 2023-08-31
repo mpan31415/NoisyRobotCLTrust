@@ -202,9 +202,9 @@ void generate_ref_marker(visualization_msgs::msg::Marker &ref_marker, double x, 
   ref_marker.type = visualization_msgs::msg::Marker::SPHERE;
 
   // diameters of the sphere in x, y, z directions [cm]
-  ref_marker.scale.x = 0.015;
-  ref_marker.scale.y = 0.015;
-  ref_marker.scale.z = 0.015;
+  ref_marker.scale.x = 0.02;
+  ref_marker.scale.y = 0.02;
+  ref_marker.scale.z = 0.02;
 
   // sphere is green
   ref_marker.color.g = 1.0;
@@ -229,9 +229,9 @@ void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker)
   tcp_marker.type = visualization_msgs::msg::Marker::SPHERE;
 
   // diameters of the sphere in x, y, z directions [cm]
-  tcp_marker.scale.x = 0.015;
-  tcp_marker.scale.y = 0.015;
-  tcp_marker.scale.z = 0.015;
+  tcp_marker.scale.x = 0.01;
+  tcp_marker.scale.y = 0.01;
+  tcp_marker.scale.z = 0.01;
 
   // sphere is red
   tcp_marker.color.r = 245.0;
@@ -296,7 +296,7 @@ void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vec
   traj_marker.type = visualization_msgs::msg::Marker::LINE_STRIP;
 
   // LINE_STRIP/LINE_LIST markers use only the x component of scale, for the line width
-  traj_marker.scale.x = 0.01;  // make this 1 cm
+  traj_marker.scale.x = 0.015;  // make this 1.5 cm
 
   // Line strip is blue
   traj_marker.color.b = 1.0;

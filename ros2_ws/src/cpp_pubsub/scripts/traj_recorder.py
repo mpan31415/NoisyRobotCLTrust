@@ -94,6 +94,10 @@ class TrajRecorder(Node):
         if self.free_drive:
             self.write_data = False
         
+        # do not log data if in full autonomy mode
+        if self.auto_id == 0:
+            self.write_data = False
+        
         # data points of the trajectory {human, robot, total}
         self.hxs = []
         self.hys = []
