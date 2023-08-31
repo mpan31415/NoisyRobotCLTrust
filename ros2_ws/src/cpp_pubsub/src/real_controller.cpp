@@ -84,7 +84,7 @@ public:
   int auto_id {0};
   int traj_id {0};
   
-  std::vector<double> origin {0.5059, 0.0, 0.3846}; //////// can change the task-space origin point! ////////
+  std::vector<double> origin {0.5059, 0.0, 0.4346}; //////// can change the task-space origin point! ////////
 
   std::vector<double> human_offset {0.0, 0.0, 0.0};
   std::vector<double> robot_offset {0.0, 0.0, 0.0};

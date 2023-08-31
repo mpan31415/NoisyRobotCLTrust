@@ -16,7 +16,7 @@ from datetime import datetime
 from time import time
 
 
-ORIGIN = [0.5059, 0.0, 0.3846]   # this is in [meters]
+ORIGIN = [0.5059, 0.0, 0.4346]   # this is in [meters]
 
 ALL_CSV_DIR = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/"
 

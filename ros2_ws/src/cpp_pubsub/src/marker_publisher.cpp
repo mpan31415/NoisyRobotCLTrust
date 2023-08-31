@@ -40,7 +40,7 @@ class MarkerPublisher : public rclcpp::Node
     int traj_id {0};
     
      //////// KEEP CONSISTENT WITH REAL CONTROLLER ////////
-    std::vector<double> origin {0.5059, 0.0, 0.3846};
+    std::vector<double> origin {0.5059, 0.0, 0.4346};
     const int max_points = 200;
 
     // for the reference tcp marker
