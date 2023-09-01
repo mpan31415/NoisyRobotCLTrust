@@ -110,7 +110,7 @@ private:
     message.x = p[0] * 100;
     message.y = p[1] * 100;
     message.z = p[2] * 100;
-    // RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
     publisher_->publish(message);
 
 
@@ -120,26 +120,26 @@ private:
         rclcpp::shutdown();
     }
 
-    // only run if the button is pressed (or) the reset condition is active
-    if (dhdGetButton (0) == DHD_ON || reset == true) {
-      if (!reset) {
-        reset = true;
-        printf ("\n\n=============================== RE-CENTERING IN 1 SECOND ===============================\n\n");
-      }
-      reset_count++;
-      if (reset_count == count_thres1) {
-        // this is 1 second after the button has been pressed
-        // need to reset {count, reset_count, reset, K, C}
-        printf ("\n\n=============================== CENTERING NOW !!! ===============================\n\n");
-        count = 0;
-        reset_count = 0;
-        reset = false;
+    // // only run if the button is pressed (or) the reset condition is active
+    // if (dhdGetButton (0) == DHD_ON || reset == true) {
+    //   if (!reset) {
+    //     reset = true;
+    //     printf ("\n\n=============================== RE-CENTERING IN 1 SECOND ===============================\n\n");
+    //   }
+    //   reset_count++;
+    //   if (reset_count == count_thres1) {
+    //     // this is 1 second after the button has been pressed
+    //     // need to reset {count, reset_count, reset, K, C}
+    //     printf ("\n\n=============================== CENTERING NOW !!! ===============================\n\n");
+    //     count = 0;
+    //     reset_count = 0;
+    //     reset = false;
 
-        // restore the K and C gain vectors to initial values
-        K[0] = 200.0; K[1] = 50.0; K[2] = 50.0;
-        C[0] = 5.0;   C[1] = 5.0;  C[2] = 5.0;
-      }
-    }
+    //     // restore the K and C gain vectors to initial values
+    //     K[0] = 200.0; K[1] = 50.0; K[2] = 50.0;
+    //     C[0] = 5.0;   C[1] = 5.0;  C[2] = 5.0;
+    //   }
+    // }
 
     count++;
     if (count > count_thres1) {

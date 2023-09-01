@@ -119,6 +119,11 @@ public:
   double ay = 0.0;
   double az = 0.0;
 
+  // initial alpha values (from experimental setting)
+  double iax = 0.0;
+  double iay = 0.0;
+  double iaz = 0.0;
+
   // trajectory recording
   const int traj_duration = 10;   // in [seconds]
   int max_recording_count = control_freq * traj_duration;
@@ -137,6 +142,20 @@ public:
   double depth = 0.1;
   double width = 0.3;
   double height = 0.1;
+
+  // for gradually shifting control to robot after 10 second trajectory
+  const int shifting_time = 3;   // seconds
+  int max_shifting_count = shifting_time * control_freq;
+
+  // for moving to home after trajectory finishes
+  std::vector<double> final_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+  // home joint values
+  std::vector<double> home_joint_vals {0, -M_PI_4/2, 0, -5 * M_PI_4/2, 0, M_PI_2, M_PI_4};
+
+  // for gradually homing the robot after the 3-second shifting
+  const int homing_time = 3;    // seconds
+  int max_homing_count = homing_time * control_freq;
 
 
   ////////////////////////////////////////////////////////////////////////
@@ -166,6 +185,11 @@ public:
     ax = alphas_dict.at(auto_id).at(0);
     ay = alphas_dict.at(auto_id).at(1);
     az = alphas_dict.at(auto_id).at(2);
+    
+    // also store them into the initial alpha values
+    iax = ax;
+    iay = ay;
+    iaz = az;
 
     // write the sine curve parameters
     switch (traj_id) {
@@ -229,12 +253,23 @@ private:
 
     } else {
 
-      auto traj_message = trajectory_msgs::msg::JointTrajectory();
-      traj_message.joint_names = {"panda_joint1", "panda_joint2", "panda_joint3", "panda_joint4", "panda_joint5", "panda_joint6", "panda_joint7"};
-
       // get the robot control offset in Cartesian space (calling the corresponding function of the traj_id)
       t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // t_param is in the range [0, 2pi], but can be out of range
       get_robot_control(t_param);      
+
+      // gradually change control authority to fully robot after 10 second trajectory
+      if (count > max_smoothing_count+max_recording_count && count <= max_smoothing_count+max_recording_count+max_shifting_count) {
+        double shift_t = (double) (count - max_smoothing_count - max_recording_count) / max_shifting_count;
+        ax = (1.0 - shift_t) * iax;
+        ay = (1.0 - shift_t) * iay;
+        az = (1.0 - shift_t) * iaz;
+        // std::cout << "        The value of ax, ay, az are " << ax << std::endl;
+      }
+
+      // write the joint values at the final trajectory position
+      if (count == max_smoothing_count+max_recording_count+max_shifting_count) {
+        for (size_t i=0; i<7; i++) final_joint_vals.at(i) = curr_joint_vals.at(i);
+      }
 
       // perform the convex combination of robot and human offsets
       // also adding the origin and thus representing it as tcp_pos in the robot's base frame
@@ -266,6 +301,21 @@ private:
       } else {
         for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ik_joint_vals.at(i);
       }
+
+      // bring it home boys
+      if (count > max_smoothing_count + max_recording_count + max_shifting_count) {
+        double hr = 0.0;
+        if (count <= max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count) {
+          hr = (double) (count - max_smoothing_count - max_recording_count - max_shifting_count) / max_homing_count;
+        } else {
+          hr = 1.0;
+        }
+        for (size_t i=0; i<7; i++) message_joint_vals.at(i) = hr * home_joint_vals.at(i) + (1-hr) * final_joint_vals.at(i);
+
+        std::cout << "     The value of hr is " << hr << std::endl;
+      }
+        
+
 
       ///////// check limits /////////
       if (!within_limits(message_joint_vals)) {
