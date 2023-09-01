@@ -157,6 +157,10 @@ public:
   const int homing_time = 3;    // seconds
   int max_homing_count = homing_time * control_freq;
 
+  // wait 1 second before shutting down node
+  const int shutdown_time = 1;    // second
+  int max_shutdown_count = shutdown_time * control_freq;
+
 
   ////////////////////////////////////////////////////////////////////////
   RealController()
@@ -294,7 +298,7 @@ private:
         } else {
           ratio = 1.0;
         }
-        std::cout << "The smoothing ratio is " << ratio << std::endl;
+        // std::cout << "The smoothing ratio is " << ratio << std::endl;
 
         for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ratio * ik_joint_vals.at(i) + (1-ratio) * initial_joint_vals.at(i);
 
@@ -311,11 +315,13 @@ private:
           hr = 1.0;
         }
         for (size_t i=0; i<7; i++) message_joint_vals.at(i) = hr * home_joint_vals.at(i) + (1-hr) * final_joint_vals.at(i);
-
-        std::cout << "     The value of hr is " << hr << std::endl;
       }
-        
 
+      // shutdown down 1 second after homing
+      if (count == max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count + max_shutdown_count) {
+        std::cout << "\n    Trial finished cleanly! Shutting down now ... Bye-bye!    \n" << std::endl;
+        rclcpp::shutdown();
+      }
 
       ///////// check limits /////////
       if (!within_limits(message_joint_vals)) {
