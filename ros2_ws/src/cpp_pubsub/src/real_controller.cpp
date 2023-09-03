@@ -46,7 +46,7 @@ KDL::Chain panda_chain;
 KDL::Rotation orientation;
 bool got_orientation = false;
 
-std::vector<double> tcp_pos {0.3069, 0.0, 0.4853};   // initialized the same as the "home" position
+std::vector<double> tcp_pos {0.5059, 0.0, 0.4346};   // initialized the same as the "home" position
 
 //////// global dictionaries ////////
 std::vector< std::vector<double> > alphas_dict {
@@ -77,11 +77,11 @@ class RealController : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "part_id", "auto_id", "traj_id"};
+  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "part_id", "alpha_id", "traj_id"};
   int free_drive {0};
   double mapping_ratio {3.0};
   int part_id {0};
-  int auto_id {0};
+  int alpha_id {0};
   int traj_id {0};
   
   std::vector<double> origin {0.5059, 0.0, 0.4346}; //////// can change the task-space origin point! ////////
@@ -154,7 +154,7 @@ public:
   std::vector<double> home_joint_vals {0, -M_PI_4/2, 0, -5 * M_PI_4/2, 0, M_PI_2, M_PI_4};
 
   // for gradually homing the robot after the 3-second shifting
-  const int homing_time = 3;    // seconds
+  const int homing_time = 2;    // seconds
   int max_homing_count = homing_time * control_freq;
 
   // wait 1 second before shutting down node
@@ -177,18 +177,18 @@ public:
     free_drive = std::stoi(params.at(0).value_to_string().c_str());
     mapping_ratio = std::stod(params.at(1).value_to_string().c_str());
     part_id = std::stoi(params.at(2).value_to_string().c_str());
-    auto_id = std::stoi(params.at(3).value_to_string().c_str());
+    alpha_id = std::stoi(params.at(3).value_to_string().c_str());
     traj_id = std::stoi(params.at(4).value_to_string().c_str());
 
-    // overwrite auto_id if the free drive mode is activated
-    if (free_drive == 1) auto_id = 5;
+    // overwrite alpha_id if the free drive mode is activated
+    if (free_drive == 1) alpha_id = 5;
 
     print_params();
 
-    // update {ax, ay, az} values using the parameter "auto_id"
-    ax = alphas_dict.at(auto_id).at(0);
-    ay = alphas_dict.at(auto_id).at(1);
-    az = alphas_dict.at(auto_id).at(2);
+    // update {ax, ay, az} values using the parameter "alpha_id"
+    ax = alphas_dict.at(alpha_id).at(0);
+    ay = alphas_dict.at(alpha_id).at(1);
+    az = alphas_dict.at(alpha_id).at(2);
     
     // also store them into the initial alpha values
     iax = ax;
@@ -221,7 +221,10 @@ public:
     last_point_pub_ = this->create_publisher<std_msgs::msg::Bool>("last_point", 10);  // publishes only once
 
     // controller count publisher, same frequency as the controller
-    count_pub_ = this->create_publisher<std_msgs::msg::Float64>("controller_count", 10);
+    // count_pub_ = this->create_publisher<std_msgs::msg::Float64>("controller_count", 10);
+
+    // countdown publisher, only publishes at whole second points during smoothing
+    countdown_pub_ = this->create_publisher<std_msgs::msg::Float64>("countdown", 10);
 
     joint_vals_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
       "franka/joint_states", 10, std::bind(&RealController::joint_states_callback, this, std::placeholders::_1));
@@ -261,20 +264,21 @@ private:
       t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // t_param is in the range [0, 2pi], but can be out of range
       get_robot_control(t_param);      
 
-      // gradually change control authority to fully robot after 10 second trajectory
-      if (count > max_smoothing_count+max_recording_count && count <= max_smoothing_count+max_recording_count+max_shifting_count) {
-        double shift_t = (double) (count - max_smoothing_count - max_recording_count) / max_shifting_count;
-        ax = (1.0 - shift_t) * iax;
-        ay = (1.0 - shift_t) * iay;
-        az = (1.0 - shift_t) * iaz;
-        // std::cout << "        The value of ax, ay, az are " << ax << std::endl;
+      // calculate shifting final position if NOT in free-drive mode
+      if (!free_drive) {
+        // gradually change control authority to fully robot after 10 second trajectory
+        if (count > max_smoothing_count+max_recording_count && count <= max_smoothing_count+max_recording_count+max_shifting_count) {
+          double shift_t = (double) (count - max_smoothing_count - max_recording_count) / max_shifting_count;
+          ax = (1.0 - shift_t) * iax;
+          ay = (1.0 - shift_t) * iay;
+          az = (1.0 - shift_t) * iaz;
+        }
+        // write the joint values at the final trajectory position
+        if (count == max_smoothing_count+max_recording_count+max_shifting_count) {
+          for (size_t i=0; i<7; i++) final_joint_vals.at(i) = curr_joint_vals.at(i);
+        }
       }
-
-      // write the joint values at the final trajectory position
-      if (count == max_smoothing_count+max_recording_count+max_shifting_count) {
-        for (size_t i=0; i<7; i++) final_joint_vals.at(i) = curr_joint_vals.at(i);
-      }
-
+      
       // perform the convex combination of robot and human offsets
       // also adding the origin and thus representing it as tcp_pos in the robot's base frame
       tcp_pos.at(0) = origin.at(0) + ax * human_offset.at(0) + (1-ax) * robot_offset.at(0);
@@ -306,21 +310,23 @@ private:
         for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ik_joint_vals.at(i);
       }
 
-      // bring it home boys
-      if (count > max_smoothing_count + max_recording_count + max_shifting_count) {
-        double hr = 0.0;
-        if (count <= max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count) {
-          hr = (double) (count - max_smoothing_count - max_recording_count - max_shifting_count) / max_homing_count;
-        } else {
-          hr = 1.0;
+      // perform homing action if NOT in free-drive mode
+      if (!free_drive) {
+        // bring it home boys
+        if (count > max_smoothing_count + max_recording_count + max_shifting_count) {
+          double hr = 0.0;
+          if (count <= max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count) {
+            hr = (double) (count - max_smoothing_count - max_recording_count - max_shifting_count) / max_homing_count;
+          } else {
+            hr = 1.0;
+          }
+          for (size_t i=0; i<7; i++) message_joint_vals.at(i) = hr * home_joint_vals.at(i) + (1-hr) * final_joint_vals.at(i);
         }
-        for (size_t i=0; i<7; i++) message_joint_vals.at(i) = hr * home_joint_vals.at(i) + (1-hr) * final_joint_vals.at(i);
-      }
-
-      // shutdown down 1 second after homing
-      if (count == max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count + max_shutdown_count) {
-        std::cout << "\n    Trial finished cleanly! Shutting down now ... Bye-bye!    \n" << std::endl;
-        rclcpp::shutdown();
+        // shutdown down 1 second after homing
+        if (count == max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count + max_shutdown_count) {
+          std::cout << "\n    Trial finished cleanly! Shutting down now ... Bye-bye!    \n" << std::endl;
+          rclcpp::shutdown();
+        }
       }
 
       ///////// check limits /////////
@@ -346,10 +352,17 @@ private:
         record_flag = false; 
       }
 
-      ///////////// publish the controller count message /////////////
-      auto count_msg = std_msgs::msg::Float64();
-      count_msg.data = count;
-      count_pub_->publish(count_msg);
+      // ///////////// publish the controller count message /////////////
+      // auto count_msg = std_msgs::msg::Float64();
+      // count_msg.data = count;
+      // count_pub_->publish(count_msg);
+
+      ///////////// check if need to publish the countdown message /////////////
+      if (count % control_freq == 0) {
+        auto count_msg = std_msgs::msg::Float64();
+        count_msg.data = count / control_freq;
+        countdown_pub_->publish(count_msg);
+      }
     }
   }
 
@@ -443,7 +456,7 @@ private:
     std::cout << "Free drive mode = " << free_drive << "\n" << std::endl;
     std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
-    std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
+    std::cout << "Alpha ID = " << alpha_id << "\n" << std::endl;
     std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;
     for (unsigned int i=0; i<10; i++) std::cout << "\n";
   }
@@ -459,7 +472,9 @@ private:
 
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr last_point_pub_;
 
-  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr count_pub_;
+  // rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr count_pub_;
+
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr countdown_pub_;
 
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_vals_sub_;
 

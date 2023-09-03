@@ -28,14 +28,14 @@ def generate_launch_description():
     free_drive_parameter_name = 'free_drive'
     mapping_ratio_parameter_name = 'mapping_ratio'
     participant_parameter_name = 'part_id'
+    alpha_parameter_name = 'alpha_id'
     trajectory_parameter_name = 'traj_id'
-    autonomy_parameter_name = 'auto_id'
 
     free_drive = LaunchConfiguration(free_drive_parameter_name)
     mapping_ratio = LaunchConfiguration(mapping_ratio_parameter_name)
     participant = LaunchConfiguration(participant_parameter_name)
+    alpha = LaunchConfiguration(alpha_parameter_name)
     trajectory = LaunchConfiguration(trajectory_parameter_name)
-    autonomy = LaunchConfiguration(autonomy_parameter_name)
 
 
     return LaunchDescription([
@@ -100,9 +100,9 @@ def generate_launch_description():
             default_value=my_part_id,  
             description='Participant ID parameter'),
         DeclareLaunchArgument(
-            autonomy_parameter_name,
-            default_value=my_auto_id,
-            description='Autonomy ID parameter'),
+            alpha_parameter_name,
+            default_value=my_alpha_id,
+            description='Alpha ID parameter'),
         DeclareLaunchArgument(
             trajectory_parameter_name,
             default_value=my_traj_id,
@@ -153,8 +153,8 @@ def generate_launch_description():
             parameters=[
                 {mapping_ratio_parameter_name: mapping_ratio},
                 {participant_parameter_name: participant},
-                {trajectory_parameter_name: trajectory},
-                {autonomy_parameter_name: autonomy}
+                {alpha_parameter_name: alpha},
+                {trajectory_parameter_name: trajectory}
             ],
             output='screen',
             emulate_tty=True,
@@ -167,8 +167,8 @@ def generate_launch_description():
             executable='marker_publisher',
             parameters=[
                 {participant_parameter_name: participant},
-                {trajectory_parameter_name: trajectory},
-                {autonomy_parameter_name: autonomy}
+                {alpha_parameter_name: alpha},
+                {trajectory_parameter_name: trajectory}
             ],
             output='screen',
             emulate_tty=True,
@@ -183,8 +183,8 @@ def generate_launch_description():
                 {free_drive_parameter_name: free_drive},
                 {mapping_ratio_parameter_name: mapping_ratio},
                 {participant_parameter_name: participant},
-                {trajectory_parameter_name: trajectory},
-                {autonomy_parameter_name: autonomy}
+                {alpha_parameter_name: alpha},
+                {trajectory_parameter_name: trajectory}
             ],
             output='screen',
             emulate_tty=True

@@ -22,10 +22,10 @@ class PositionTalker : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"mapping_ratio", "part_id", "auto_id", "traj_id"};
+  std::vector<std::string> param_names = {"mapping_ratio", "part_id", "alpha_id", "traj_id"};
   double mapping_ratio {3.0};
   int part_id {0};
-  int auto_id {0};
+  int alpha_id {0};
   int traj_id {0};
 
   // other arrays
@@ -40,7 +40,7 @@ public:
 
   ///////// -> this is the centering / starting Falcon pos, but is NOT THE ORIGIN => ORIGIN IS ALWAYS (0, 0, 0)
   ///////// -> max bounds are around +-0.05m (5cm)
-  ///////// -> this depends on the auto_id parameter
+  ///////// -> this depends on the alpha_id parameter
   std::vector<double> centering {0.00, 0.00, 0.00};   ///////// -> note: this is in [meters]
   // guide:
   // {x, y, z} = {1, 2, 3} DOFS = {in/out, left/right, up/down}
@@ -66,7 +66,7 @@ public:
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
     mapping_ratio = std::stod(params.at(0).value_to_string().c_str());
     part_id = std::stoi(params.at(1).value_to_string().c_str());
-    auto_id = std::stoi(params.at(2).value_to_string().c_str());
+    alpha_id = std::stoi(params.at(2).value_to_string().c_str());
     traj_id = std::stoi(params.at(3).value_to_string().c_str());
     print_params();
 
@@ -110,7 +110,7 @@ private:
     message.x = p[0] * 100;
     message.y = p[1] * 100;
     message.z = p[2] * 100;
-    RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
+    // RCLCPP_INFO(this->get_logger(), "Publishing position: px = %.3f, py = %.3f, pz = %.3f  [in cm]", message.x, message.y, message.z);
     publisher_->publish(message);
 
 
@@ -156,7 +156,7 @@ private:
     std::cout << "\n\nThe current parameters [position_publisher] are as follows:\n" << std::endl;
     std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
-    std::cout << "Autonomy ID = " << auto_id << "\n" << std::endl;
+    std::cout << "Alpha ID = " << alpha_id << "\n" << std::endl;
     std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;
     for (unsigned int i=0; i<10; i++) std::cout << "\n";
   }

@@ -46,7 +46,7 @@ class TrajRecorder(Node):
         super().__init__('traj_recorder')
 
         # parameter stuff
-        self.param_names = ['free_drive', 'mapping_ratio', 'part_id', 'auto_id', 'traj_id']
+        self.param_names = ['free_drive', 'mapping_ratio', 'part_id', 'alpha_id', 'traj_id']
         self.declare_parameters(
             namespace='',
             parameters=[
@@ -57,11 +57,11 @@ class TrajRecorder(Node):
                 (self.param_names[4], 0)
             ]
         )
-        (free_drive_param, mapping_ratio_param, part_param, auto_param, traj_param) = self.get_parameters(self.param_names)
+        (free_drive_param, mapping_ratio_param, part_param, alpha_param, traj_param) = self.get_parameters(self.param_names)
         self.free_drive = free_drive_param.value
         self.mapping_ratio = mapping_ratio_param.value
         self.part_id = part_param.value
-        self.auto_id = auto_param.value
+        self.alpha_id = alpha_param.value
         self.traj_id = traj_param.value
 
         self.print_params()
@@ -95,7 +95,7 @@ class TrajRecorder(Node):
             self.write_data = False
         
         # do not log data if in full autonomy mode
-        if self.auto_id == 0:
+        if self.alpha_id == 0:
             self.write_data = False
         
         # data points of the trajectory {human, robot, total}
@@ -140,8 +140,8 @@ class TrajRecorder(Node):
             self.times.append(time())
             self.datetimes.append(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
-            print("Appending new data, currently at size %d" % len(self.hxs))
-            print("self.last point is %s" % self.last_point)
+            # print("Appending new data, currently at size %d" % len(self.hxs))
+            # print("self.last point is %s" % self.last_point)
 
             if self.last_point and not self.data_written:
                 # print("\n\nWe have finished recording!, writing to csv now!\n\n")
@@ -164,10 +164,13 @@ class TrajRecorder(Node):
     ##############################################################################
     def write_to_csv(self):
 
-        dl = DataLogger(self.csv_dir, self.part_id, self.auto_id, self.traj_id, self.hxs, self.hys, self.hzs,
+        dl = DataLogger(self.csv_dir, self.part_id, self.alpha_id, self.traj_id, self.hxs, self.hys, self.hzs,
                         self.rxs, self.rys, self.rzs, self.txs, self.tys, self.tzs, self.times_from_start, self.times, self.datetimes)
 
+        dl.calc_error()
+
         dl.write_header()
+        
         dl.log_data()
 
     
@@ -180,7 +183,7 @@ class TrajRecorder(Node):
         print("The free_drive flag = %d\n\n" % self.free_drive)
         print("The mapping_ratio = %d\n\n" % self.mapping_ratio)
         print("The participant_id = %d\n\n" % self.part_id)
-        print("The autonomy_id = %d\n\n" % self.auto_id)
+        print("The alpha_id = %d\n\n" % self.alpha_id)
         print("The trajectory_id = %d\n\n" % self.traj_id)
 
         print("=" * 100)

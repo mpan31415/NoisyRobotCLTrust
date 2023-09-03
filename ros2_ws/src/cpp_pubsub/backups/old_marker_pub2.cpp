@@ -17,14 +17,17 @@ using namespace std::chrono_literals;
 
 
 /////////  functions to show markers in Rviz  /////////
-void generate_ref_ball(visualization_msgs::msg::Marker &ref_marker, double x, double y, double z, double d,
-                       visualization_msgs::msg::Marker &traj_marker);
-
+void generate_ref_ball(visualization_msgs::msg::Marker &ref_marker, double x, double y, double z, visualization_msgs::msg::Marker &traj_marker);
 void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker);
 visualization_msgs::msg::Marker generate_countdown(int count, std::vector<double> &center);
+visualization_msgs::msg::Marker generate_progress(double percentage, double line_width, std::vector<double> center, double height, double width, int id);
 
 void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points,
                           double pa, double pb, double pc, double ps, double ph, double height, double width, double depth);
+
+void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::vector<double> center, double height, double width);
+
+visualization_msgs::msg::Marker generate_cleaner_marker();
 
 
 class MarkerPublisher : public rclcpp::Node
@@ -45,7 +48,10 @@ class MarkerPublisher : public rclcpp::Node
     std::vector<double> ref_pos {0.0, 0.0, 0.0};
 
     // for the progress bar
+    // std::vector<double> bar_center {-0.2, 0.0, 1.0};
     std::vector<double> bar_center {0.3, 0.0, 0.05};
+    double bar_width {0.5};
+    double bar_height {0.1};
 
     const int pub_freq = 50;   // [Hz]
     const int control_freq = 500;    // [Hz]
@@ -54,8 +60,16 @@ class MarkerPublisher : public rclcpp::Node
 
     const int max_recording_time = 10;    // [seconds]
 
+    double line_width = bar_width / (pub_freq * max_smoothing_time);
+
+    int my_marker_id {5};
+
+    // int controller_count {0};
+
     int controller_seconds {0};
     int countdown_count {5};
+    
+    std::vector<visualization_msgs::msg::Marker> progress_bar_lines;
 
     // sine curve parameters (initialization)
     int pa = 0;
@@ -96,6 +110,9 @@ class MarkerPublisher : public rclcpp::Node
       // generate the trajectory marker
       generate_traj_marker(traj_marker_, origin, max_points, pa, pb, pc, ps, ph, traj_height, traj_width, traj_depth);
 
+      // generate the empty progress bar
+      generate_progress_bar(progress_bar_, bar_center, bar_height, bar_width);
+
       // create the marker publisher
       marker_timer_ = this->create_wall_timer(20ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 50 Hz
       marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("visualization_marker_array", 10);
@@ -104,8 +121,18 @@ class MarkerPublisher : public rclcpp::Node
       ref_sub_ = this->create_subscription<tutorial_interfaces::msg::PosInfo>(
       "tcp_position", 10, std::bind(&MarkerPublisher::ref_callback, this, std::placeholders::_1));
 
+      // controller count subscriber
+      // count_sub_ = this->create_subscription<std_msgs::msg::Float64>(
+      // "controller_count", 10, std::bind(&MarkerPublisher::count_callback, this, std::placeholders::_1));
+
       count_sub_ = this->create_subscription<std_msgs::msg::Float64>(
       "countdown", 10, std::bind(&MarkerPublisher::count_callback, this, std::placeholders::_1));
+
+      // marker cleaner & wipe all existing markers
+      // auto cleaner_marker_arr = visualization_msgs::msg::MarkerArray();
+      // auto cleaner_marker = generate_cleaner_marker();
+      // cleaner_marker_arr.markers.push_back(cleaner_marker);
+      // marker_pub_->publish(cleaner_marker_arr);
     }
 
 
@@ -116,15 +143,25 @@ class MarkerPublisher : public rclcpp::Node
       auto marker_array_msg = visualization_msgs::msg::MarkerArray();
 
       // add in the certain ones
+      // marker_array_msg.markers.push_back(progress_bar_);
       marker_array_msg.markers.push_back(traj_marker_);
 
       generate_tcp_marker(tcp_marker_);
       marker_array_msg.markers.push_back(tcp_marker_);
       
-      double d = 0.1;    // note: this is {0.1 at closest, 0.0 at farthest}
-      if (ref_pos.at(0) != 0.0) {d = ref_pos.at(0) - origin.at(0) + 0.05;}
-      generate_ref_ball(ref_marker_, ref_pos.at(0), ref_pos.at(1), ref_pos.at(2), d, traj_marker_);
+      generate_ref_ball(ref_marker_, ref_pos.at(0), ref_pos.at(1), ref_pos.at(2), traj_marker_);
       marker_array_msg.markers.push_back(ref_marker_);
+
+      // // add progress bar if needed
+      // if (controller_count > 0.0 && controller_count < max_smoothing_count) {
+
+      //   double percentage = controller_count / max_smoothing_count;
+      //   auto progress_marker = generate_progress(percentage, line_width, bar_center, bar_height, bar_width, my_marker_id);
+      //   my_marker_id++;
+
+      //   progress_bar_lines.push_back(progress_marker);
+      //   for (size_t i=0; i<progress_bar_lines.size(); i++) marker_array_msg.markers.push_back(progress_bar_lines.at(i));
+      // }
 
       // display countdown numbers when during smoothing
       if (countdown_count >= 0 || countdown_count == -10) {
@@ -168,13 +205,13 @@ class MarkerPublisher : public rclcpp::Node
     visualization_msgs::msg::Marker traj_marker_;
     visualization_msgs::msg::Marker ref_marker_;
     visualization_msgs::msg::Marker tcp_marker_;
+    visualization_msgs::msg::Marker progress_bar_;
     
 };
 
 
 /////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE BALL ///////////////////////////////////
-void generate_ref_ball(visualization_msgs::msg::Marker &ref_marker, double x, double y, double z, double d,
-                       visualization_msgs::msg::Marker &traj_marker)
+void generate_ref_ball(visualization_msgs::msg::Marker &ref_marker, double x, double y, double z, visualization_msgs::msg::Marker &traj_marker) 
 {
   // fill-in the tcp_marker message
   ref_marker.header.frame_id = "/panda_link0";
@@ -185,10 +222,9 @@ void generate_ref_ball(visualization_msgs::msg::Marker &ref_marker, double x, do
   ref_marker.type = visualization_msgs::msg::Marker::SPHERE;
 
   // diameters of the sphere in x, y, z directions [cm]
-  double my_size = 0.015 + d/20;
-  ref_marker.scale.x = my_size;
-  ref_marker.scale.y = my_size;
-  ref_marker.scale.z = my_size;
+  ref_marker.scale.x = 0.02;
+  ref_marker.scale.y = 0.02;
+  ref_marker.scale.z = 0.02;
 
   // sphere is green
   ref_marker.color.g = 1.0;
@@ -262,11 +298,15 @@ visualization_msgs::msg::Marker generate_countdown(int count, std::vector<double
   }
   text.color.a = 1.0;
 
+  // what to display
   text.text = std::to_string(count);
 
+  // let's go!
   if (count == 0) {
     text.text = "Go!";
   }
+
+  // stop right there!
   if (count == -10) {
     text.text = "Stop!";
     text.color.r = 1.0;
@@ -278,6 +318,45 @@ visualization_msgs::msg::Marker generate_countdown(int count, std::vector<double
   text.pose.position.z = center.at(2) + 0.05;
 
   return text;
+}
+
+
+/////////////////////////////////// FUNCTIONS TO GENERATE PROGRESS ///////////////////////////////////
+visualization_msgs::msg::Marker generate_progress(double percentage, double line_width, std::vector<double> center, double height, double width, int id)
+{ 
+  auto progress = visualization_msgs::msg::Marker();
+
+  // fill-in the progress message
+  progress.header.frame_id = "/panda_link0";
+  progress.header.stamp = rclcpp::Clock().now();
+  progress.ns = "marker_publisher";
+  progress.action = visualization_msgs::msg::Marker::ADD;
+  progress.id = id;
+  progress.type = visualization_msgs::msg::Marker::LINE_LIST;
+
+  // width of line strip
+  progress.scale.x = line_width;
+
+  // line strip is green
+  progress.color.g = 1.0;
+  progress.color.a = 1.0;
+  
+  // Create the vertices for the points and lines
+  geometry_msgs::msg::Point top;
+  geometry_msgs::msg::Point bottom;
+
+  top.x = center.at(0) - height/2; 
+  top.y = center.at(1) - (width/2) + percentage * width;
+  top.z = center.at(2);
+
+  bottom.x = center.at(0) + height/2;
+  bottom.y = center.at(1) - (width/2) + percentage * width;
+  bottom.z = center.at(2);
+
+  progress.points.push_back(top);
+  progress.points.push_back(bottom);
+
+  return progress;
 }
 
 
@@ -298,7 +377,7 @@ void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vec
 
   // Line strip is blue
   traj_marker.color.b = 1.0;
-  traj_marker.color.a = 0.5;
+  traj_marker.color.a = 1.0;
 
   // Create the vertices for the points and lines
   for (int count=0; count<=max_points; count++) {
@@ -317,6 +396,64 @@ void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vec
     traj_marker.points.push_back(p);
   }
 }
+
+
+/////////////////////////////////// FUNCTIONS TO GENERATE TCP MARKER ///////////////////////////////////
+void generate_progress_bar(visualization_msgs::msg::Marker &progress_bar, std::vector<double> center, double height, double width) 
+{
+  // fill-in the progress_bar message
+  progress_bar.header.frame_id = "/panda_link0";
+  progress_bar.header.stamp = rclcpp::Clock().now();
+  progress_bar.ns = "marker_publisher";
+  progress_bar.action = visualization_msgs::msg::Marker::ADD;
+  progress_bar.id = 3;
+  progress_bar.type = visualization_msgs::msg::Marker::LINE_LIST;
+
+  // width of line 
+  progress_bar.scale.x = 0.02;
+
+  // Points are green
+  progress_bar.color.g = 1.0;
+  progress_bar.color.a = 1.0;
+
+  // define the positions of the four corners of the progress bar
+  geometry_msgs::msg::Point tl;
+  geometry_msgs::msg::Point tr;
+  geometry_msgs::msg::Point br;
+  geometry_msgs::msg::Point bl;
+
+  tl.x = center.at(0) - height/2; tl.y = center.at(1) - width/2; tl.z = center.at(2);
+  tr.x = center.at(0) - height/2; tr.y = center.at(1) + width/2; tr.z = center.at(2);
+  br.x = center.at(0) + height/2; br.y = center.at(1) + width/2; br.z = center.at(2);
+  bl.x = center.at(0) + height/2; bl.y = center.at(1) - width/2; bl.z = center.at(2);
+
+  // add them sequentially, forming line segments between each consecutive pair
+  progress_bar.points.push_back(tl);
+  progress_bar.points.push_back(tr);
+  progress_bar.points.push_back(tr);
+  progress_bar.points.push_back(br);
+  progress_bar.points.push_back(br);
+  progress_bar.points.push_back(bl);
+  progress_bar.points.push_back(bl);
+  progress_bar.points.push_back(tl);
+}
+
+
+/////////////////////////////////// FUNCTIONS TO CLEAR ALL MARKERS ///////////////////////////////////
+visualization_msgs::msg::Marker generate_cleaner_marker() 
+{ 
+  auto cleaner_marker = visualization_msgs::msg::Marker();
+
+  // fill-in the cleaner_marker message
+  cleaner_marker.header.frame_id = "/panda_link0";
+  cleaner_marker.header.stamp = rclcpp::Clock().now();
+  cleaner_marker.ns = "marker_publisher";
+  cleaner_marker.action = visualization_msgs::msg::Marker::DELETEALL;
+  cleaner_marker.id = 4;
+
+  return cleaner_marker;
+}
+
 
 
 /////////////////////////// THE MAIN FUNCTION ///////////////////////////

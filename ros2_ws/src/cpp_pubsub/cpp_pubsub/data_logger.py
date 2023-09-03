@@ -1,15 +1,16 @@
 from csv import writer, DictReader, DictWriter
 from os.path import isfile
+from math import sqrt
 
 
 #####################################################################################################
 class DataLogger:
 
-    def __init__(self, csv_dir, part_id, auto_id, traj_id, hxs, hys, hzs, rxs, rys, rzs, txs, tys, tzs, times_from_start, times, datetimes):
+    def __init__(self, csv_dir, part_id, alpha_id, traj_id, hxs, hys, hzs, rxs, rys, rzs, txs, tys, tzs, times_from_start, times, datetimes):
         
         self.csv_dir = csv_dir
         self.part_id = part_id
-        self.auto_id = auto_id
+        self.alpha_id = alpha_id
         self.traj_id = traj_id
         
         self.hxs = hxs
@@ -30,7 +31,57 @@ class DataLogger:
         self.datetimes = datetimes
 
         self.header_file_name = self.csv_dir + "part" + str(self.part_id) + "_header.csv"
-        self.header_field_names = ['trial_number', 'auto_id', 'traj_id']
+        self.header_field_names = ['trial_number', 'alpha_id', 'traj_id', 'human_ave', 'overall_ave', 'human_total', 'overall_total',
+                                   'human_dim_ave', 'overall_dim_ave', 'human_dim_total', 'overall_dim_total']
+
+
+    ##############################################################################
+    def calc_error(self):
+        
+        ########################################### THESE GO INTO THE 400-LINE FILE ###########################################
+        # human error lists in each dim
+        self.hx_err_list = [abs(self.hxs[i] - self.rxs[i]) for i in range(self.num_points)]
+        self.hy_err_list = [abs(self.hys[i] - self.rys[i]) for i in range(self.num_points)]
+        self.hz_err_list = [abs(self.hzs[i] - self.rzs[i]) for i in range(self.num_points)]
+
+        # overall error lists in each dim
+        self.tx_err_list = [abs(self.txs[i] - self.rxs[i]) for i in range(self.num_points)]
+        self.ty_err_list = [abs(self.tys[i] - self.rys[i]) for i in range(self.num_points)]
+        self.tz_err_list = [abs(self.tzs[i] - self.rzs[i]) for i in range(self.num_points)]
+
+        # human & overall Euclidean norm error list
+        self.h_err_list = [sqrt((self.hx_err_list[i])**2 + (self.hy_err_list[i])**2 + (self.hz_err_list[i])**2) for i in range(self.num_points)]
+        self.t_err_list = [sqrt((self.tx_err_list[i])**2 + (self.ty_err_list[i])**2 + (self.tz_err_list[i])**2) for i in range(self.num_points)]
+
+        ########################################### THESE GO INTO THE HEADER FILE ###########################################
+
+        # total human errors
+        self.hx_err_total = sum(self.hx_err_list)
+        self.hy_err_total = sum(self.hy_err_list)
+        self.hz_err_total = sum(self.hz_err_list)
+        self.h_dim_err_total = [self.hx_err_total, self.hy_err_total, self.hz_err_total]    # log this
+        self.h_err_total = sum(self.h_err_list)                                             # log this
+
+        # total overall errors
+        self.tx_err_total = sum(self.tx_err_list)
+        self.ty_err_total = sum(self.ty_err_list)
+        self.tz_err_total = sum(self.tz_err_list)
+        self.t_dim_err_total = [self.tx_err_total, self.ty_err_total, self.tz_err_total]    # log this
+        self.t_err_total = sum(self.t_err_list)                                             # log this
+
+        # average human errors
+        self.hx_err_ave = self.hx_err_total / self.num_points
+        self.hy_err_ave = self.hy_err_total / self.num_points
+        self.hz_err_ave = self.hz_err_total / self.num_points
+        self.h_dim_err_ave = [self.hx_err_ave, self.hy_err_ave, self.hz_err_ave]            # log this
+        self.h_err_ave = self.h_err_total / self.num_points                                 # log this
+
+        # average overall errors
+        self.tx_err_ave = self.tx_err_total / self.num_points
+        self.ty_err_ave = self.ty_err_total / self.num_points
+        self.tz_err_ave = self.tz_err_total / self.num_points
+        self.t_dim_err_ave = [self.tx_err_ave, self.ty_err_ave, self.tz_err_ave]            # log this
+        self.t_err_ave = self.t_err_total / self.num_points                                 # log this
 
 
     ##############################################################################
@@ -57,8 +108,16 @@ class DataLogger:
 
             # dictionary that we want to add as a new row
             new_trial_data = {self.header_field_names[0]: trial_id,
-                              self.header_field_names[1]: self.auto_id,
-                              self.header_field_names[2]: self.traj_id
+                              self.header_field_names[1]: self.alpha_id,
+                              self.header_field_names[2]: self.traj_id,
+                              self.header_field_names[3]: self.h_err_ave,
+                              self.header_field_names[4]: self.t_err_ave,
+                              self.header_field_names[5]: self.h_err_total,
+                              self.header_field_names[6]: self.t_err_total,
+                              self.header_field_names[7]: self.h_dim_err_ave,
+                              self.header_field_names[8]: self.t_dim_err_ave,
+                              self.header_field_names[9]: self.h_dim_err_total,
+                              self.header_field_names[10]: self.t_dim_err_total
             }
 
             writer = DictWriter(f, fieldnames=self.header_field_names)
@@ -81,9 +140,12 @@ class DataLogger:
             # write datapoints [recorded trajectory points]
             for i in range(self.num_points):
                 wr.writerow([self.hxs[i], self.hys[i], self.hzs[i], self.rxs[i], self.rys[i], self.rzs[i],
-                             self.txs[i], self.tys[i], self.tzs[i], self.times_from_start[i], self.times[i], self.datetimes[i]])
+                             self.txs[i], self.tys[i], self.tzs[i], self.h_err_list[i], self.t_err_list[i],
+                             self.hx_err_list[i], self.hy_err_list[i], self.hz_err_list[i],
+                             self.tx_err_list[i], self.ty_err_list[i], self.tz_err_list[i],
+                             self.times_from_start[i], self.times[i], self.datetimes[i]])
 
-            print("\nSuccesfully opened file %s to log data !!!\n" % self.data_file_name)
+            print("\nSuccesfully opened file %s and finished logging data !!!\n" % self.data_file_name)
 
     
 
@@ -93,12 +155,12 @@ class DataLogger:
 #     # data for testing
 #     part_id = 1
 #     traj_id = 1
-#     auto_id = 3
+#     alpha_id = 3
 
 #     csv_dir = "/home/michael/HRI/ros2_ws/src/cpp_pubsub/data_logging/csv_logs/part" + str(part_id) + "/"
 
 #     # initialize the data logger object, and write to files
-#     michael = DataLogger(csv_dir, part_id, traj_id, auto_id, [1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3])
+#     michael = DataLogger(csv_dir, part_id, traj_id, alpha_id, [1, 1, 1, 1, 1], [2, 2, 2, 2, 2], [3, 3, 3, 3, 3])
 
 #     # note, we must call write_header before log_data, since header generates the data_file_name
 #     michael.write_header()
