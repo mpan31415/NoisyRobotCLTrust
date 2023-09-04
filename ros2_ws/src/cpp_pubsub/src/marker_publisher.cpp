@@ -85,9 +85,9 @@ class MarkerPublisher : public rclcpp::Node
 
       // write the sine curve parameters
       switch (traj_id) {
-        case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.4; break;
-        case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.3; break;
-        case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.3; break;
+        case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.3; break;
+        case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.2; break;
+        case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.2; break;
         case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2; break;
         case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2; break;
         case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2; break;
@@ -248,7 +248,7 @@ visualization_msgs::msg::Marker generate_countdown(int count, std::vector<double
   text.id = 10;
   text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
 
-  // height of 'A' is 10 cm
+  // height of 'A' is 20 cm
   text.scale.z = 0.2;
 
   // set text color and opacity
