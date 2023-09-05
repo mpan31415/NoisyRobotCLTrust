@@ -36,7 +36,7 @@ class DataLogger:
 
 
     ##############################################################################
-    def calc_error(self):
+    def calc_error(self, use_depth):
         
         ########################################### THESE GO INTO THE 400-LINE FILE ###########################################
         # human error lists in each dim
@@ -50,8 +50,12 @@ class DataLogger:
         self.tz_err_list = [abs(self.tzs[i] - self.rzs[i]) for i in range(self.num_points)]
 
         # human & overall Euclidean norm error list
-        self.h_err_list = [sqrt((self.hx_err_list[i])**2 + (self.hy_err_list[i])**2 + (self.hz_err_list[i])**2) for i in range(self.num_points)]
-        self.t_err_list = [sqrt((self.tx_err_list[i])**2 + (self.ty_err_list[i])**2 + (self.tz_err_list[i])**2) for i in range(self.num_points)]
+        if use_depth:
+            self.h_err_list = [sqrt((self.hx_err_list[i])**2 + (self.hy_err_list[i])**2 + (self.hz_err_list[i])**2) for i in range(self.num_points)]
+            self.t_err_list = [sqrt((self.tx_err_list[i])**2 + (self.ty_err_list[i])**2 + (self.tz_err_list[i])**2) for i in range(self.num_points)]
+        else:
+            self.h_err_list = [sqrt((self.hy_err_list[i])**2 + (self.hz_err_list[i])**2) for i in range(self.num_points)]
+            self.t_err_list = [sqrt((self.ty_err_list[i])**2 + (self.tz_err_list[i])**2) for i in range(self.num_points)]
 
         ########################################### THESE GO INTO THE HEADER FILE ###########################################
 

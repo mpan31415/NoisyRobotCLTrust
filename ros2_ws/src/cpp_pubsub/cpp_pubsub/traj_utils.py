@@ -1,15 +1,17 @@
-from numpy import matrix, pi, ndarray, linspace, sin, cos, stack, asarray, absolute
+from numpy import matrix, pi, ndarray, linspace, sin, cos, stack, asarray, absolute, zeros
 # from math import sin, cos
 import matplotlib.pyplot as plt
 
 
 ####################################################################################
-def get_sine_ref_points(n_points: int, a, b, c, s, h, height, width, depth, origin: list[float]):
+def get_sine_ref_points(n_points: int, a, b, c, s, h, height, width, depth, origin: list[float], use_depth: int):
 
     ampz = h * height
 
     theta = linspace(0, 2*pi, n_points)
-    npx = absolute(asarray(theta-pi))/pi*depth - (depth/2)
+    npx = zeros(n_points)
+    if use_depth == 1:
+        npx = absolute(asarray(theta-pi))/pi*depth - (depth/2)
     npy = theta/(2*pi)*width - (width/2)
     npz = ampz * (sin(a*(theta+s)) + sin(b*(theta+s)) + sin(c*(theta+s)))
 

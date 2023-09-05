@@ -77,9 +77,10 @@ class RealController : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "part_id", "alpha_id", "traj_id"};
+  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "use_depth", "part_id", "alpha_id", "traj_id"};
   int free_drive {0};
   double mapping_ratio {3.0};
+  int use_depth {0};
   int part_id {0};
   int alpha_id {0};
   int traj_id {0};
@@ -172,13 +173,15 @@ public:
     this->declare_parameter(param_names.at(2), 0);
     this->declare_parameter(param_names.at(3), 0);
     this->declare_parameter(param_names.at(4), 0);
+    this->declare_parameter(param_names.at(5), 0);
     
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
     free_drive = std::stoi(params.at(0).value_to_string().c_str());
     mapping_ratio = std::stod(params.at(1).value_to_string().c_str());
-    part_id = std::stoi(params.at(2).value_to_string().c_str());
-    alpha_id = std::stoi(params.at(3).value_to_string().c_str());
-    traj_id = std::stoi(params.at(4).value_to_string().c_str());
+    use_depth = std::stod(params.at(2).value_to_string().c_str());
+    part_id = std::stoi(params.at(3).value_to_string().c_str());
+    alpha_id = std::stoi(params.at(4).value_to_string().c_str());
+    traj_id = std::stoi(params.at(5).value_to_string().c_str());
 
     // overwrite alpha_id if the free drive mode is activated
     if (free_drive == 1) alpha_id = 5;
@@ -197,9 +200,9 @@ public:
 
     // write the sine curve parameters
     switch (traj_id) {
-      case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.3; break;
-      case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.2; break;
-      case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.2; break;
+      case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.25; break;
+      case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.25; break;
+      case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.25; break;
       case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2; break;
       case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2; break;
       case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2; break;
@@ -444,7 +447,9 @@ private:
     if (t < 0.0) t = 0.0;
     if (t > 2*M_PI) t = 2*M_PI;
 
-    robot_offset.at(0) = abs(t-M_PI) / M_PI * depth - (depth/2);
+    robot_offset.at(0) = 0.0;
+    if (use_depth) robot_offset.at(0) = abs(t-M_PI) / M_PI * depth - (depth/2);
+    
     robot_offset.at(1) = t / (2*M_PI) * width - (width/2);
     robot_offset.at(2) = (ph*height) * (sin(pa*(t+ps)) + sin(pb*(t+ps)) + sin(pc*(t+ps)));
   }
@@ -455,6 +460,7 @@ private:
     std::cout << "\n\nThe current parameters [real_controller] are as follows:\n" << std::endl;
     std::cout << "Free drive mode = " << free_drive << "\n" << std::endl;
     std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
+    std::cout << "Use depth parameter = " << use_depth << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
     std::cout << "Alpha ID = " << alpha_id << "\n" << std::endl;
     std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;

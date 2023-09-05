@@ -22,8 +22,9 @@ class PositionTalker : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"mapping_ratio", "part_id", "alpha_id", "traj_id"};
+  std::vector<std::string> param_names = {"mapping_ratio", "use_depth", "part_id", "alpha_id", "traj_id"};
   double mapping_ratio {3.0};
+  int use_depth {0};
   int part_id {0};
   int alpha_id {0};
   int traj_id {0};
@@ -62,13 +63,18 @@ public:
     this->declare_parameter(param_names.at(1), 0);
     this->declare_parameter(param_names.at(2), 0);
     this->declare_parameter(param_names.at(3), 0);
+    this->declare_parameter(param_names.at(4), 0);
     
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
     mapping_ratio = std::stod(params.at(0).value_to_string().c_str());
-    part_id = std::stoi(params.at(1).value_to_string().c_str());
-    alpha_id = std::stoi(params.at(2).value_to_string().c_str());
-    traj_id = std::stoi(params.at(3).value_to_string().c_str());
+    use_depth = std::stoi(params.at(1).value_to_string().c_str());
+    part_id = std::stoi(params.at(2).value_to_string().c_str());
+    alpha_id = std::stoi(params.at(3).value_to_string().c_str());
+    traj_id = std::stoi(params.at(4).value_to_string().c_str());
     print_params();
+
+    // update first point if not using depth
+    if (use_depth == 0) first_point = {0.0, -0.15, 0.0};
 
     // update centering position using "post_point" computed above
     for (size_t i=0; i<3; i++) centering.at(i) = first_point.at(i) / mapping_ratio;
@@ -155,6 +161,7 @@ private:
     for (unsigned int i=0; i<10; i++) std::cout << "\n";
     std::cout << "\n\nThe current parameters [position_publisher] are as follows:\n" << std::endl;
     std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
+    std::cout << "Use depth parameter = " << use_depth << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
     std::cout << "Alpha ID = " << alpha_id << "\n" << std::endl;
     std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;

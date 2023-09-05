@@ -25,9 +25,9 @@ LOG_DATA = True
 
 # sin curve parameters 
 TRAJ_DICT_LIST = [
-    {'a': 1, 'b': 1, 'c': 4, 's': pi,     'h': 0.3},
-    {'a': 2, 'b': 3, 'c': 4, 's': 4*pi/3, 'h': 0.2},
-    {'a': 1, 'b': 3, 'c': 4, 's': pi,     'h': 0.2},
+    {'a': 1, 'b': 1, 'c': 4, 's': pi,     'h': 0.25},
+    {'a': 2, 'b': 3, 'c': 4, 's': 4*pi/3, 'h': 0.25},
+    {'a': 1, 'b': 3, 'c': 4, 's': pi,     'h': 0.25},
     {'a': 2, 'b': 2, 'c': 5, 's': pi,     'h': 0.2},
     {'a': 2, 'b': 3, 'c': 5, 's': 8*pi/5, 'h': 0.2},
     {'a': 2, 'b': 4, 'c': 5, 's': pi,     'h': 0.2}
@@ -46,7 +46,7 @@ class TrajRecorder(Node):
         super().__init__('traj_recorder')
 
         # parameter stuff
-        self.param_names = ['free_drive', 'mapping_ratio', 'part_id', 'alpha_id', 'traj_id']
+        self.param_names = ['free_drive', 'mapping_ratio', 'use_depth', 'part_id', 'alpha_id', 'traj_id']
         self.declare_parameters(
             namespace='',
             parameters=[
@@ -54,12 +54,14 @@ class TrajRecorder(Node):
                 (self.param_names[1], 3.0),
                 (self.param_names[2], 0),
                 (self.param_names[3], 0),
-                (self.param_names[4], 0)
+                (self.param_names[4], 0),
+                (self.param_names[5], 0)
             ]
         )
-        (free_drive_param, mapping_ratio_param, part_param, alpha_param, traj_param) = self.get_parameters(self.param_names)
+        (free_drive_param, mapping_ratio_param, use_depth_param, part_param, alpha_param, traj_param) = self.get_parameters(self.param_names)
         self.free_drive = free_drive_param.value
         self.mapping_ratio = mapping_ratio_param.value
+        self.use_depth = use_depth_param.value
         self.part_id = part_param.value
         self.alpha_id = alpha_param.value
         self.traj_id = traj_param.value
@@ -69,7 +71,8 @@ class TrajRecorder(Node):
         # get the reference trajectory points
         self.traj_params = TRAJ_DICT_LIST[self.traj_id]
         self.refx, self.refy, self.refz = get_sine_ref_points(200, self.traj_params['a'], self.traj_params['b'], self.traj_params['c'], 
-                                                              self.traj_params['s'], self.traj_params['h'], TRAJ_HEIGHT, TRAJ_WIDTH, TRAJ_DEPTH, ORIGIN)
+                                                              self.traj_params['s'], self.traj_params['h'], TRAJ_HEIGHT, TRAJ_WIDTH, TRAJ_DEPTH, 
+                                                              ORIGIN, self.use_depth)
 
         # tcp position subscriber
         self.tcp_pos_sub = self.create_subscription(PosInfo, 'tcp_position', self.tcp_pos_callback, 10)
@@ -167,7 +170,7 @@ class TrajRecorder(Node):
         dl = DataLogger(self.csv_dir, self.part_id, self.alpha_id, self.traj_id, self.hxs, self.hys, self.hzs,
                         self.rxs, self.rys, self.rzs, self.txs, self.tys, self.tzs, self.times_from_start, self.times, self.datetimes)
 
-        dl.calc_error()
+        dl.calc_error(self.use_depth)
 
         dl.write_header()
         
@@ -182,6 +185,7 @@ class TrajRecorder(Node):
         print("\n\nThe current parameters [traj_recorder] are as follows:\n")
         print("The free_drive flag = %d\n\n" % self.free_drive)
         print("The mapping_ratio = %d\n\n" % self.mapping_ratio)
+        print("The use_depth = %d\n\n" % self.use_depth)
         print("The participant_id = %d\n\n" % self.part_id)
         print("The alpha_id = %d\n\n" % self.alpha_id)
         print("The trajectory_id = %d\n\n" % self.traj_id)

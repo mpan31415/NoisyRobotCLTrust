@@ -24,7 +24,7 @@ void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker);
 visualization_msgs::msg::Marker generate_countdown(int count, std::vector<double> &center);
 
 void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points,
-                          double pa, double pb, double pc, double ps, double ph, double height, double width, double depth);
+                          double pa, double pb, double pc, double ps, double ph, double height, double width, double depth, int use_depth);
 
 
 class MarkerPublisher : public rclcpp::Node
@@ -32,7 +32,8 @@ class MarkerPublisher : public rclcpp::Node
   public:
 
     // parameters name list
-    std::vector<std::string> param_names = {"part_id", "alpha_id", "traj_id"};
+    std::vector<std::string> param_names = {"use_depth", "part_id", "alpha_id", "traj_id"};
+    int use_depth {0};
     int part_id {0};
     int alpha_id {0};
     int traj_id {0};
@@ -76,25 +77,27 @@ class MarkerPublisher : public rclcpp::Node
       this->declare_parameter(param_names.at(0), 0);
       this->declare_parameter(param_names.at(1), 0);
       this->declare_parameter(param_names.at(2), 0);
+      this->declare_parameter(param_names.at(3), 0);
       
       std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
-      part_id = std::stoi(params.at(0).value_to_string().c_str());
-      alpha_id = std::stoi(params.at(1).value_to_string().c_str());
-      traj_id = std::stoi(params.at(2).value_to_string().c_str());
+      use_depth = std::stoi(params.at(0).value_to_string().c_str());
+      part_id = std::stoi(params.at(1).value_to_string().c_str());
+      alpha_id = std::stoi(params.at(2).value_to_string().c_str());
+      traj_id = std::stoi(params.at(3).value_to_string().c_str());
       print_params();
 
       // write the sine curve parameters
       switch (traj_id) {
-        case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.3; break;
-        case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.2; break;
-        case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.2; break;
+        case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.25; break;
+        case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.25; break;
+        case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.25; break;
         case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2; break;
         case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2; break;
         case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2; break;
       }
 
       // generate the trajectory marker
-      generate_traj_marker(traj_marker_, origin, max_points, pa, pb, pc, ps, ph, traj_height, traj_width, traj_depth);
+      generate_traj_marker(traj_marker_, origin, max_points, pa, pb, pc, ps, ph, traj_height, traj_width, traj_depth, use_depth);
 
       // create the marker publisher
       marker_timer_ = this->create_wall_timer(20ms, std::bind(&MarkerPublisher::marker_callback, this));  // publish this at 50 Hz
@@ -153,6 +156,7 @@ class MarkerPublisher : public rclcpp::Node
     void print_params() {
       for (unsigned int i=0; i<10; i++) std::cout << "\n";
       std::cout << "\n\nThe current parameters [marker_publisher] are as follows:\n" << std::endl;
+      std::cout << "Use depth parameter = " << use_depth << "\n" << std::endl;
       std::cout << "Participant ID = " << part_id << "\n" << std::endl;
       std::cout << "Alpha ID = " << alpha_id << "\n" << std::endl;
       std::cout << "Trajectory ID = " << traj_id << "\n" << std::endl;
@@ -192,7 +196,7 @@ void generate_ref_ball(visualization_msgs::msg::Marker &ref_marker, double x, do
 
   // sphere is green
   ref_marker.color.g = 1.0;
-  ref_marker.color.a = 1.0;
+  ref_marker.color.a = 0.35;
   
   if (x == 0.0) {
     // use first point of traj_marker_
@@ -220,9 +224,9 @@ void generate_tcp_marker(visualization_msgs::msg::Marker &tcp_marker)
   tcp_marker.type = visualization_msgs::msg::Marker::SPHERE;
 
   // diameters of the sphere in x, y, z directions [cm]
-  tcp_marker.scale.x = 0.01;
-  tcp_marker.scale.y = 0.01;
-  tcp_marker.scale.z = 0.01;
+  tcp_marker.scale.x = 0.015;
+  tcp_marker.scale.y = 0.015;
+  tcp_marker.scale.z = 0.015;
 
   // sphere is red
   tcp_marker.color.r = 1.0;
@@ -283,7 +287,7 @@ visualization_msgs::msg::Marker generate_countdown(int count, std::vector<double
 
 /////////////////////////////////// FUNCTIONS TO GENERATE REFERENCE TRAJECTORY MARKERS ///////////////////////////////////
 void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vector<double> &origin, int max_points,
-                          double pa, double pb, double pc, double ps, double ph, double height, double width, double depth)
+                          double pa, double pb, double pc, double ps, double ph, double height, double width, double depth, int use_depth)
 {
   // fill-in the traj_marker message
   traj_marker.header.frame_id = "/panda_link0";
@@ -298,14 +302,16 @@ void generate_traj_marker(visualization_msgs::msg::Marker &traj_marker, std::vec
 
   // Line strip is blue
   traj_marker.color.b = 1.0;
-  traj_marker.color.a = 0.5;
+  traj_marker.color.a = 0.2;
 
   // Create the vertices for the points and lines
   for (int count=0; count<=max_points; count++) {
 
     double t = (double) count / max_points * 2 * M_PI;   // parametrized in the range [0, 2pi]
 
-    double x = abs(t-M_PI) / M_PI * depth - (depth/2);
+    double x = 0.0;
+    if (use_depth) x = abs(t-M_PI) / M_PI * depth - (depth/2);
+    
     double y = t / (2*M_PI) * width - (width/2);
     double z = (ph*height) * (sin(pa*(t+ps)) + sin(pb*(t+ps)) + sin(pc*(t+ps)));
 
