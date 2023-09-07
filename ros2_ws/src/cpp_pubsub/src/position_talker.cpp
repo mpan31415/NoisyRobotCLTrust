@@ -49,7 +49,7 @@ public:
   
 
   // sine curve's first point is currently all the same
-  std::vector<double> first_point {0.05, -0.15, 0.0};
+  std::vector<double> first_point {0.06, -0.16, -0.01};
 
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ public:
     print_params();
 
     // update first point if not using depth
-    if (use_depth == 0) first_point = {0.0, -0.15, 0.0};
+    if (use_depth == 0) first_point = {0.01, -0.16, -0.01};
 
     // update centering position using "post_point" computed above
     for (size_t i=0; i<3; i++) centering.at(i) = first_point.at(i) / mapping_ratio;
