@@ -267,19 +267,16 @@ private:
       t_param = (double) (count - max_smoothing_count) / max_recording_count * 2 * M_PI;   // t_param is in the range [0, 2pi], but can be out of range
       get_robot_control(t_param);      
 
-      // calculate shifting final position if NOT in free-drive mode
-      if (!free_drive) {
-        // gradually change control authority to fully robot after 10 second trajectory
-        if (count > max_smoothing_count+max_recording_count && count <= max_smoothing_count+max_recording_count+max_shifting_count) {
-          double shift_t = (double) (count - max_smoothing_count - max_recording_count) / max_shifting_count;
-          ax = (1.0 - shift_t) * iax;
-          ay = (1.0 - shift_t) * iay;
-          az = (1.0 - shift_t) * iaz;
-        }
-        // write the joint values at the final trajectory position
-        if (count == max_smoothing_count+max_recording_count+max_shifting_count) {
-          for (size_t i=0; i<7; i++) final_joint_vals.at(i) = curr_joint_vals.at(i);
-        }
+      // gradually change control authority to fully robot after 10 second trajectory
+      if (count > max_smoothing_count+max_recording_count && count <= max_smoothing_count+max_recording_count+max_shifting_count) {
+        double shift_t = (double) (count - max_smoothing_count - max_recording_count) / max_shifting_count;
+        ax = (1.0 - shift_t) * iax;
+        ay = (1.0 - shift_t) * iay;
+        az = (1.0 - shift_t) * iaz;
+      }
+      // write the joint values at the final trajectory position
+      if (count == max_smoothing_count+max_recording_count+max_shifting_count) {
+        for (size_t i=0; i<7; i++) final_joint_vals.at(i) = curr_joint_vals.at(i);
       }
       
       // perform the convex combination of robot and human offsets
@@ -313,23 +310,20 @@ private:
         for (unsigned int i=0; i<n_joints; i++) message_joint_vals.at(i) = ik_joint_vals.at(i);
       }
 
-      // perform homing action if NOT in free-drive mode
-      if (!free_drive) {
-        // bring it home boys
-        if (count > max_smoothing_count + max_recording_count + max_shifting_count) {
-          double hr = 0.0;
-          if (count <= max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count) {
-            hr = (double) (count - max_smoothing_count - max_recording_count - max_shifting_count) / max_homing_count;
-          } else {
-            hr = 1.0;
-          }
-          for (size_t i=0; i<7; i++) message_joint_vals.at(i) = hr * home_joint_vals.at(i) + (1-hr) * final_joint_vals.at(i);
+      // bring it home boys
+      if (count > max_smoothing_count + max_recording_count + max_shifting_count) {
+        double hr = 0.0;
+        if (count <= max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count) {
+          hr = (double) (count - max_smoothing_count - max_recording_count - max_shifting_count) / max_homing_count;
+        } else {
+          hr = 1.0;
         }
-        // shutdown down 1 second after homing
-        if (count == max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count + max_shutdown_count) {
-          std::cout << "\n    Trial finished cleanly! Shutting down now ... Bye-bye!    \n" << std::endl;
-          rclcpp::shutdown();
-        }
+        for (size_t i=0; i<7; i++) message_joint_vals.at(i) = hr * home_joint_vals.at(i) + (1-hr) * final_joint_vals.at(i);
+      }
+      // shutdown down 1 second after homing
+      if (count == max_smoothing_count + max_recording_count + max_shifting_count + max_homing_count + max_shutdown_count) {
+        std::cout << "\n    Trial finished cleanly! Shutting down now ... Bye-bye!    \n" << std::endl;
+        rclcpp::shutdown();
       }
 
       ///////// check limits /////////
