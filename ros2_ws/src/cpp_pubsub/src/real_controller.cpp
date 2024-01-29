@@ -27,6 +27,10 @@
 
 #include <algorithm>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 
 using namespace std::chrono_literals;
 
@@ -62,6 +66,12 @@ std::vector< std::vector<double> > alphas_dict {
 /////////////////// function declarations ///////////////////
 void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_vals, std::vector<double>& res_vals);
 
+void readCSV(const std::string& filename, std::vector<double>& dataArray);
+double linearInterpolate(double y1, double y2, double mu);
+double cosineInterpolate(double y1, double y2, double mu);
+std::vector<double> linear_interpolate_vec(std::vector<double> old_vec, int num_interp);
+std::vector<double> cosine_interpolate_vec(std::vector<double> old_vec, int num_interp);
+
 bool within_limits(std::vector<double>& vals);
 bool create_tree();
 void get_chain();
@@ -88,6 +98,7 @@ public:
   std::vector<double> origin {0.5059, 0.0, 0.4346}; //////// can change the task-space origin point! ////////
 
   std::vector<double> human_offset {0.0, 0.0, 0.0};
+  std::vector<double> ref_offset {0.0, 0.0, 0.0};
   std::vector<double> robot_offset {0.0, 0.0, 0.0};
 
   std::vector<double> curr_joint_vals {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -161,6 +172,9 @@ public:
   // wait 1 second before shutting down node
   const int shutdown_time = 1;    // second
   int max_shutdown_count = shutdown_time * control_freq;
+
+  // empty noise vector
+  std::vector<double> robot_noise_vector;
 
 
   ////////////////////////////////////////////////////////////////////////
@@ -239,6 +253,8 @@ public:
     if (!create_tree()) rclcpp::shutdown();
     get_chain();
 
+    // read the noise data csv file
+    generate_noise_vector("noise1.csv");
   }
 
 private:
@@ -376,6 +392,12 @@ private:
     // note: this is in meters
     auto message = tutorial_interfaces::msg::PosInfo();
 
+    message.ref_position = {
+      origin.at(0) + ref_offset.at(0),
+      origin.at(1) + ref_offset.at(1),
+      origin.at(2) + ref_offset.at(2)
+    };
+
     message.human_position = {
       origin.at(0) + human_offset.at(0),
       origin.at(1) + human_offset.at(1),
@@ -437,15 +459,50 @@ private:
   /////////////////////////////// robot control function ///////////////////////////////
   void get_robot_control(double t) 
   { 
-    // make sure within bounds of [0, 2pi]
-    if (t < 0.0) t = 0.0;
-    if (t > 2*M_PI) t = 2*M_PI;
+    int within_traj_count = count - max_smoothing_count;
 
-    robot_offset.at(0) = 0.0;
-    if (use_depth) robot_offset.at(0) = abs(t-M_PI) / M_PI * depth - (depth/2);
-    
-    robot_offset.at(1) = t / (2*M_PI) * width - (width/2);
-    robot_offset.at(2) = (ph*height) * (sin(pa*(t+ps)) + sin(pb*(t+ps)) + sin(pc*(t+ps)));
+    // make sure t = [0, 2pi], wtj = [0, 5000]
+    if (t < 0.0) {t = 0.0; within_traj_count = 0;}
+    if (t > 2*M_PI) {t = 2*M_PI; within_traj_count = 5000;}
+
+    // assign the noise
+    double noise = robot_noise_vector.at(within_traj_count);
+    if (within_traj_count%100==0) std::cout << "noise_value = " << noise << std::endl;
+
+    // compute reference position and assign into ref_position vector
+    ref_offset.at(0) = 0.0;
+    if (use_depth) ref_offset.at(0) = abs(t-M_PI) / M_PI * depth - (depth/2);
+    ref_offset.at(1) = t / (2*M_PI) * width - (width/2);
+    ref_offset.at(2) = (ph*height) * (sin(pa*(t+ps)) + sin(pb*(t+ps)) + sin(pc*(t+ps)));
+
+    // compute robot target = reference position + noise
+    robot_offset.at(0) = ref_offset.at(0);
+    robot_offset.at(1) = ref_offset.at(1);
+    robot_offset.at(2) = ref_offset.at(2) + noise;
+  }
+
+  ///////////////////////////////////// FUNCTION TO READ NOISE CSV AND INTERPOLATE /////////////////////////////////////
+  void generate_noise_vector(const std::string filename) {
+
+    std::string csv_file_name {"/home/michael/HRI/ros2_ws/src/cpp_pubsub/robot_noise/noise_csv_files/"+filename};
+
+    std::vector<double> raw_data;
+    const int num_interp = 49;
+
+    // read csv file
+    readCSV(csv_file_name, raw_data);
+    std::cout << "Length of raw noise array = " << raw_data.size() << std::endl;
+
+    // Display the data stored in the array
+    // std::cout << "Data in the array: ";
+    // for (const auto& value : raw_data) {
+    //     std::cout << value << " ";
+    // }
+    // std::cout << std::endl;
+
+    // interpolate (linear / cosine)
+    robot_noise_vector = linear_interpolate_vec(raw_data, num_interp);
+    std::cout << "Success! Length of new noise vector = " << robot_noise_vector.size() << std::endl;
   }
 
   ///////////////////////////////////// FUNCTION TO PRINT PARAMETERS /////////////////////////////////////
@@ -481,6 +538,7 @@ private:
   rclcpp::Subscription<tutorial_interfaces::msg::Falconpos>::SharedPtr falcon_pos_sub_;
   
 };
+
 
 
 
@@ -530,6 +588,71 @@ void compute_ik(std::vector<double>& desired_tcp_pos, std::vector<double>& curr_
     std::cout << "Execution of my IK solver function took " << duration.count() << " [microseconds]" << std::endl;
   }
   
+}
+
+
+///////////////// Noise helper functions /////////////////
+
+// Function to read CSV file and store data in a C++ array
+void readCSV(const std::string& filename, std::vector<double>& dataArray) {
+    std::ifstream file(filename);
+
+    if (file.is_open()) {
+        std::string line;
+        getline(file, line); // Read the entire line from the CSV
+
+        std::stringstream ss(line);
+        std::string value;
+
+        while (getline(ss, value, ',')) {
+            // Assuming the CSV contains integers; you can modify this part based on your data type
+            double dataValue = std::stod(value);
+            dataArray.push_back(dataValue);
+        }
+
+        file.close();
+    } else {
+        std::cerr << "Unable to open the file: " << filename << std::endl;
+    }
+}
+
+// Function to linearly interpolate between two numbers for a given mu
+double linearInterpolate(double y1, double y2, double mu) { return (y2 - y1) * mu + y1; }
+
+// Function to cosine interpolate between two numbers for a given mu
+double cosineInterpolate(double y1, double y2, double mu) {
+    double angle = mu * M_PI;
+    double mu2 = (1.0 - std::cos(angle)) * 0.5;
+    double res = linearInterpolate(y1, y2, mu2);
+    return res;
+}
+
+// Function to linearly interpolate a vector and return a new vector
+std::vector<double> linear_interpolate_vec(std::vector<double> old_vec, int num_interp) {
+    int num_old_points = old_vec.size();
+    std::vector<double> new_vec = {old_vec.at(0)};
+    for (int i=0; i<num_old_points-1; i++) {
+        for (int j=1; j<num_interp+2; j++) {
+            double mu = (double)j / (double)(num_interp+1);
+            double lin_x = linearInterpolate(old_vec.at(i), old_vec.at(i+1), mu);
+            new_vec.push_back(lin_x);
+        }
+    }
+    return new_vec;
+}
+
+// Function to cosine interpolate a vector and return a new vector
+std::vector<double> cosine_interpolate_vec(std::vector<double> old_vec, int num_interp) {
+    int num_old_points = old_vec.size();
+    std::vector<double> new_vec = {old_vec.at(0)};
+    for (int i=0; i<num_old_points-1; i++) {
+        for (int j=1; j<num_interp+2; j++) {
+            double mu = (double)j / (double)(num_interp+1);
+            double lin_x = cosineInterpolate(old_vec.at(i), old_vec.at(i+1), mu);
+            new_vec.push_back(lin_x);
+        }
+    }
+    return new_vec;
 }
 
 

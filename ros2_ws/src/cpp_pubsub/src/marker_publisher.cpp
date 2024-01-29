@@ -141,9 +141,9 @@ class MarkerPublisher : public rclcpp::Node
 
     void ref_callback(const tutorial_interfaces::msg::PosInfo & msg) 
     { 
-      ref_pos.at(0) = msg.robot_position[0];
-      ref_pos.at(1) = msg.robot_position[1];
-      ref_pos.at(2) = msg.robot_position[2];
+      ref_pos.at(0) = msg.ref_position[0];
+      ref_pos.at(1) = msg.ref_position[1];
+      ref_pos.at(2) = msg.ref_position[2];
     }
 
     void count_callback(const std_msgs::msg::Float64 & msg) {
