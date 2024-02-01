@@ -11,7 +11,7 @@ SIGMA = 4
 NUM_INTERP = 49
 SCALING = 30
 
-FILE_INDEX = 3
+FILE_INDEX = 4
 
 # file 1: sigma = 2, scaling = 50
 # file 2: sigma = 3, scaling = 50
@@ -49,6 +49,9 @@ def main():
     plt.legend()
     plt.grid()
     plt.show()
+
+    plt.savefig("robot_noise/plots/noise"+str(FILE_INDEX)+'.png')
+    print("Successfully saved noise plot to file = noise%d.png!" % FILE_INDEX)
     
 
 

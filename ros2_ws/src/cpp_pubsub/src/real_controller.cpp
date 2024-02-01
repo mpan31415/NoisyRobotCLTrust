@@ -174,6 +174,7 @@ public:
   int max_shutdown_count = shutdown_time * control_freq;
 
   // empty noise vector
+  std::string noise_file {"noise1.csv"};
   std::vector<double> robot_noise_vector;
 
 
@@ -254,7 +255,7 @@ public:
     get_chain();
 
     // read the noise data csv file
-    generate_noise_vector("noise1.csv");
+    generate_noise_vector(noise_file);
   }
 
 private:
@@ -479,6 +480,7 @@ private:
     robot_offset.at(0) = ref_offset.at(0);
     robot_offset.at(1) = ref_offset.at(1);
     robot_offset.at(2) = ref_offset.at(2) + noise;
+    // robot_offset.at(2) = ref_offset.at(2);
   }
 
   ///////////////////////////////////// FUNCTION TO READ NOISE CSV AND INTERPOLATE /////////////////////////////////////
