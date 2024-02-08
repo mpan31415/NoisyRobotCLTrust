@@ -101,7 +101,11 @@ class TrajRecorder(Node):
         if self.alpha_id == 0:
             self.write_data = False
         
-        # data points of the trajectory {human, robot, total}
+        # data points of the trajectory {reference, human, robot, total}
+        self.refxs = []
+        self.refys = []
+        self.refzs = []
+
         self.hxs = []
         self.hys = []
         self.hzs = []
@@ -127,6 +131,10 @@ class TrajRecorder(Node):
         
         if self.record:
             # self.get_logger().info('Recording the tcp position: x = %.3f, y = %.3f, z = %.3f ' % (msg.x, msg.y, msg.z))
+            self.refxs.append(msg.ref_position[0])
+            self.refys.append(msg.ref_position[1])
+            self.refzs.append(msg.ref_position[2])
+
             self.hxs.append(msg.human_position[0])
             self.hys.append(msg.human_position[1])
             self.hzs.append(msg.human_position[2])
@@ -167,7 +175,7 @@ class TrajRecorder(Node):
     ##############################################################################
     def write_to_csv(self):
 
-        dl = DataLogger(self.csv_dir, self.part_id, self.alpha_id, self.traj_id, self.hxs, self.hys, self.hzs,
+        dl = DataLogger(self.csv_dir, self.part_id, self.alpha_id, self.traj_id, self.refxs, self.refys, self.refzs, self.hxs, self.hys, self.hzs,
                         self.rxs, self.rys, self.rzs, self.txs, self.tys, self.tzs, self.times_from_start, self.times, self.datetimes)
 
         dl.calc_error(self.use_depth)
