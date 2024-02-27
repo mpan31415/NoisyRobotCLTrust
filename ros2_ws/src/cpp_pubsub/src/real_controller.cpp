@@ -173,8 +173,8 @@ public:
   const int shutdown_time = 1;    // second
   int max_shutdown_count = shutdown_time * control_freq;
 
-  // empty noise vector
-  std::string noise_file {"noise1.csv"};
+  // empty noise file index string & noise vector
+  std::string nid {};
   std::vector<double> robot_noise_vector;
 
 
@@ -215,12 +215,12 @@ public:
 
     // write the sine curve parameters
     switch (traj_id) {
-      case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.25; break;
-      case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.25; break;
-      case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.25; break;
-      case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2; break;
-      case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2; break;
-      case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2; break;
+      case 0: pa = 1; pb = 1; pc = 4; ps = M_PI;     ph = 0.25; nid = "8"; break;
+      case 1: pa = 2; pb = 3; pc = 4; ps = 4*M_PI/3; ph = 0.25; nid = "9"; break;
+      case 2: pa = 1; pb = 3; pc = 4; ps = M_PI;     ph = 0.25; nid = "7"; break;
+      case 3: pa = 2; pb = 2; pc = 5; ps = M_PI;     ph = 0.2;  nid = "5"; break;
+      case 4: pa = 2; pb = 3; pc = 5; ps = 8*M_PI/5; ph = 0.2;  nid = "2"; break;
+      case 5: pa = 2; pb = 4; pc = 5; ps = M_PI;     ph = 0.2;  nid = "4"; break;
     }
 
     // joint controller publisher & timer
@@ -255,6 +255,7 @@ public:
     get_chain();
 
     // read the noise data csv file
+    std::string noise_file {"noise" + nid + ".csv"};
     generate_noise_vector(noise_file);
   }
 
@@ -485,6 +486,8 @@ private:
 
   ///////////////////////////////////// FUNCTION TO READ NOISE CSV AND INTERPOLATE /////////////////////////////////////
   void generate_noise_vector(const std::string filename) {
+
+    std::cout << "Noise filename = " << filename << std::endl;
 
     std::string csv_file_name {"/home/michael/HRI/ros2_ws/src/cpp_pubsub/robot_noise/noise_csv_files/"+filename};
 

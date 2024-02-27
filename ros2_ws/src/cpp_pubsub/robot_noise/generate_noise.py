@@ -14,8 +14,9 @@ SCALING = 10
 NUM_FILES = 10
 
 TARGET_ERR = 0.024   # averaged from participants data [m]
-ERR_TOLERANCE = 0.003     # variance in participant error [m]
-START_TOLERANCE = 0.01   # first error point < 0.01 m
+RMSE_TOL = 0.003     # variance in participant error [m]
+START_TOL = 0.01   # first error point < 0.01 m
+END_TOL = 0.03   # last error point < 0.02 m
 
 
 def compute_my_rmse(noise_list):
@@ -43,7 +44,7 @@ def main():
         noise_list = smoothed_arr.tolist()      # in [m]
         my_rmse = compute_my_rmse(noise_list)   # in [m]
 
-        if abs(my_rmse - TARGET_ERR) < ERR_TOLERANCE and abs(noise_list[0]) < START_TOLERANCE:
+        if abs(my_rmse - TARGET_ERR) < RMSE_TOL and abs(noise_list[0]) < START_TOL and abs(noise_list[-1]) < END_TOL:
             smoothed_arr.tofile('robot_noise/candidate_noise/noise'+str(file_index)+'.csv', sep=',')
             print("My RMSE = %.3f, Saved to file = noise%d.csv !" % (my_rmse, file_index))
             valid_files += 1
