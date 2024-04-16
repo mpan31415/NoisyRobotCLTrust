@@ -11,6 +11,7 @@ def generate_launch_description():
     # my own launch arguments
     free_drive_parameter_name = 'free_drive'
     mapping_ratio_parameter_name = 'mapping_ratio'
+    use_noise_parameter_name = 'use_noise'
     use_depth_parameter_name = 'use_depth'
     participant_parameter_name = 'part_id'
     alpha_parameter_name = 'alpha_id'
@@ -18,6 +19,7 @@ def generate_launch_description():
 
     free_drive = LaunchConfiguration(free_drive_parameter_name)
     mapping_ratio = LaunchConfiguration(mapping_ratio_parameter_name)
+    use_noise = LaunchConfiguration(use_noise_parameter_name)
     use_depth = LaunchConfiguration(use_depth_parameter_name)
     participant = LaunchConfiguration(participant_parameter_name)
     alpha = LaunchConfiguration(alpha_parameter_name)
@@ -57,6 +59,10 @@ def generate_launch_description():
             default_value=my_mapping_ratio,  
             description='Mapping ratio parameter'),
         DeclareLaunchArgument(
+            use_noise_parameter_name,
+            default_value=my_use_noise,  
+            description='Use noise parameter'),
+        DeclareLaunchArgument(
             use_depth_parameter_name,
             default_value=my_use_depth,  
             description='Use depth parameter'),
@@ -81,6 +87,7 @@ def generate_launch_description():
             parameters=[
                 {free_drive_parameter_name: free_drive},
                 {mapping_ratio_parameter_name: mapping_ratio},
+                {use_noise_parameter_name: use_noise},
                 {use_depth_parameter_name: use_depth},
                 {participant_parameter_name: participant},
                 {alpha_parameter_name: alpha},

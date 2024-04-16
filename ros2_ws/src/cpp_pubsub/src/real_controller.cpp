@@ -87,9 +87,10 @@ class RealController : public rclcpp::Node
 public:
 
   // parameters name list
-  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "use_depth", "part_id", "alpha_id", "traj_id"};
+  std::vector<std::string> param_names = {"free_drive", "mapping_ratio", "use_noise", "use_depth", "part_id", "alpha_id", "traj_id"};
   int free_drive {0};
   double mapping_ratio {3.0};
+  int use_noise {0};
   int use_depth {0};
   int part_id {0};
   int alpha_id {0};
@@ -183,20 +184,22 @@ public:
   : Node("real_controller")
   { 
     // parameter stuff
-    this->declare_parameter(param_names.at(0), 0);
-    this->declare_parameter(param_names.at(1), 3.0);
-    this->declare_parameter(param_names.at(2), 0);
-    this->declare_parameter(param_names.at(3), 0);
-    this->declare_parameter(param_names.at(4), 0);
-    this->declare_parameter(param_names.at(5), 0);
+    this->declare_parameter(param_names.at(0), 0);    // free-drive
+    this->declare_parameter(param_names.at(1), 3.0);  // mapping ratio
+    this->declare_parameter(param_names.at(2), 0);    // use noise
+    this->declare_parameter(param_names.at(3), 0);    // use depth
+    this->declare_parameter(param_names.at(4), 0);    // part id
+    this->declare_parameter(param_names.at(5), 0);    // alpha id
+    this->declare_parameter(param_names.at(6), 0);    // traj id
     
     std::vector<rclcpp::Parameter> params = this->get_parameters(param_names);
     free_drive = std::stoi(params.at(0).value_to_string().c_str());
     mapping_ratio = std::stod(params.at(1).value_to_string().c_str());
-    use_depth = std::stod(params.at(2).value_to_string().c_str());
-    part_id = std::stoi(params.at(3).value_to_string().c_str());
-    alpha_id = std::stoi(params.at(4).value_to_string().c_str());
-    traj_id = std::stoi(params.at(5).value_to_string().c_str());
+    use_noise = std::stod(params.at(2).value_to_string().c_str());
+    use_depth = std::stod(params.at(3).value_to_string().c_str());
+    part_id = std::stoi(params.at(4).value_to_string().c_str());
+    alpha_id = std::stoi(params.at(5).value_to_string().c_str());
+    traj_id = std::stoi(params.at(6).value_to_string().c_str());
 
     // overwrite alpha_id if the free drive mode is activated
     if (free_drive == 1) alpha_id = 5;
@@ -254,9 +257,12 @@ public:
     if (!create_tree()) rclcpp::shutdown();
     get_chain();
 
-    // read the noise data csv file
-    std::string noise_file {"noise" + nid + ".csv"};
-    generate_noise_vector(noise_file);
+    // read the noise data csv file (if in noisy mode)
+    if (use_noise==1) {
+      std::string noise_file {"noise" + nid + ".csv"};
+      generate_noise_vector(noise_file);
+    }
+    
   }
 
 private:
@@ -467,10 +473,6 @@ private:
     if (t < 0.0) {t = 0.0; within_traj_count = 0;}
     if (t > 2*M_PI) {t = 2*M_PI; within_traj_count = 5000;}
 
-    // assign the noise
-    double noise = robot_noise_vector.at(within_traj_count);
-    if (within_traj_count%100==0) std::cout << "noise_value = " << noise << std::endl;
-
     // compute reference position and assign into ref_position vector
     ref_offset.at(0) = 0.0;
     if (use_depth) ref_offset.at(0) = abs(t-M_PI) / M_PI * depth - (depth/2);
@@ -480,8 +482,14 @@ private:
     // compute robot target = reference position + noise
     robot_offset.at(0) = ref_offset.at(0);
     robot_offset.at(1) = ref_offset.at(1);
-    robot_offset.at(2) = ref_offset.at(2) + noise;
-    // robot_offset.at(2) = ref_offset.at(2);
+    robot_offset.at(2) = ref_offset.at(2);
+
+    // add the noise (if in noisy mode)
+    if (use_noise==1) {
+      double noise = robot_noise_vector.at(within_traj_count);
+      if (within_traj_count%100==0) std::cout << "noise_value = " << noise << std::endl;
+      robot_offset.at(2) += noise;
+    }
   }
 
   ///////////////////////////////////// FUNCTION TO READ NOISE CSV AND INTERPOLATE /////////////////////////////////////
@@ -516,6 +524,7 @@ private:
     std::cout << "\n\nThe current parameters [real_controller] are as follows:\n" << std::endl;
     std::cout << "Free drive mode = " << free_drive << "\n" << std::endl;
     std::cout << "Mapping ratio = " << mapping_ratio << "\n" << std::endl;
+    std::cout << "Use noise flag = " << use_noise << "\n" << std::endl;
     std::cout << "Use depth parameter = " << use_depth << "\n" << std::endl;
     std::cout << "Participant ID = " << part_id << "\n" << std::endl;
     std::cout << "Alpha ID = " << alpha_id << "\n" << std::endl;
