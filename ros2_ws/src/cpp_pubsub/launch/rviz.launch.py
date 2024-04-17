@@ -16,9 +16,10 @@ def generate_launch_description():
 
     # rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
     #                          'visualize_franka.rviz')
-    # replace the rviz configuration with my own
+    # rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
+    #                          'my_config.rviz')
     rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
-                             'my_config.rviz')
+                             'autonomy_fitts.rviz')
 
     return LaunchDescription([
 
@@ -35,11 +36,11 @@ def generate_launch_description():
              condition=IfCondition(use_rviz)
              ),
 
-        # publish {camera base frame, depth camera frame}
-        Node(
-            package='cpp_pubsub',
-            executable='const_br',
-            name='const_br'
-        ),
+        # # publish {camera base frame, depth camera frame}
+        # Node(
+        #     package='cpp_pubsub',
+        #     executable='const_br',
+        #     name='const_br'
+        # ),
 
     ])
