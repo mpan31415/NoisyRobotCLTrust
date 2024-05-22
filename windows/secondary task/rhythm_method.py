@@ -10,6 +10,8 @@ from playsound import playsound
 import tobii_research as tr
 import matplotlib.pyplot as plt
 
+import importlib.util as ut
+
 
 ###################   rhythms   ###################
 
@@ -23,12 +25,21 @@ import matplotlib.pyplot as plt
 SAVE_TAP_DATA = True
 SAVE_EYE_DATA = True
 
+
 ###################   experiment settings   ###################
 
-PART_ID = 0
-ALPHA_ID = 0
-TRAJ_ID = 0
-RHYTHM_ID = 1
+# import from exp_params.py using absolute file path
+file_path = "/home/michael/HRI/ros2_ws/install/cpp_pubsub/local/lib/python3.10/dist-packages/cpp_pubsub/exp_params.py"
+
+spec = ut.spec_from_file_location("source", file_path)
+source = ut.module_from_spec(spec)
+spec.loader.exec_module(source)
+
+
+PART_ID = int(source.my_part_id)
+ALPHA_ID = int(source.my_alpha_id)
+TRAJ_ID = int(source.my_traj_id)
+RHYTHM_ID = int(source.my_rhythm_id)
 
 
 TEMPOS = [115, 120, 125, 130, 135]
@@ -37,6 +48,13 @@ TEMPO = TEMPOS[RHYTHM_ID - 1]
 MAX_TIME = 10       # seconds
 
 USE_EYETRACKER = True
+
+
+# print the experimental params
+print("\n\n part_id = %d" % int(source.my_part_id))
+print(" alpha_id = %d" % int(source.my_alpha_id))
+print(" traj_id = %d" % int(source.my_traj_id))
+print(" rhythm_id = %d\n\n" % int(source.my_rhythm_id))
 
 
 ##########################################################################################
@@ -79,21 +97,29 @@ class RhythmMethod():
         self.use_intervals = True
         
         cwd = getcwd()
-        self.tap_csv_dir = cwd + '\secondary task\data'
-        self.eye_csv_dir = cwd + '\secondary task\data_tobii'
+        # self.tap_csv_dir = cwd + '\secondary task\data'
+        # self.eye_csv_dir = cwd + '\secondary task\data_tobii'
+        self.tap_csv_dir = '/home/michael/HRI/windows/secondary task/data'
+        self.eye_csv_dir = '/home/michael/HRI/windows/secondary task/data_tobii'
         
-        rhythms_dir = cwd + "\secondary task" + "\\" + "rhythms"
+        # rhythms_dir = cwd + "\secondary task" + "\\" + "rhythms"
+        rhythms_dir = "/home/michael/HRI/windows/secondary task/rhythms"
         match self.rhythm_id:
             case 1: 
-                self.sound_file = '\Tempo115short.wav'
+                # self.sound_file = '\Tempo115short.wav'
+                self.sound_file = '/Tempo115short.wav'
             case 2: 
-                self.sound_file = '\Tempo120short.wav'
+                # self.sound_file = '\Tempo120short.wav'
+                self.sound_file = '/Tempo120short.wav'
             case 3: 
-                self.sound_file = '\Tempo125short.wav'
+                # self.sound_file = '\Tempo125short.wav'
+                self.sound_file = '/Tempo125short.wav'
             case 4: 
-                self.sound_file = '\Tempo130short.wav'
+                # self.sound_file = '\Tempo130short.wav'
+                self.sound_file = '/Tempo130short.wav'
             case 5: 
-                self.sound_file = '\Tempo135short.wav'
+                # self.sound_file = '\Tempo135short.wav'
+                self.sound_file = '/Tempo135short.wav'
             case _: 
                 print("The rhythm ID does not match a corresponding sound file!")
             

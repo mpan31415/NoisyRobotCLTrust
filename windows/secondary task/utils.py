@@ -24,7 +24,8 @@ class TappingDataLogger:
         self.error_list = error_list
         self.errp_list = errp_list
 
-        self.file_name = self.csv_dir + "\part" + str(self.part_id) + ".csv"
+        # self.file_name = self.csv_dir + "\part" + str(self.part_id) + ".csv"
+        self.file_name = self.csv_dir + "/part" + str(self.part_id) + ".csv"
         self.file_field_names = ['trial_number', 'alpha_id', 'traj_id', 'rhythm_id', 'tempo', 'ave. error', 'ave. error (%)',
                                  'ref_times', 'recorded_times', 'times_from_start', 'error_list', 'errp_list']
 
@@ -94,7 +95,8 @@ class EyeDataLogger:
         self.left_pupil_sizes = left_pupil_sizes
         self.right_pupil_sizes = right_pupil_sizes
 
-        self.file_name = self.csv_dir + "\part" + str(self.part_id) + ".csv"
+        # self.file_name = self.csv_dir + "\part" + str(self.part_id) + ".csv"
+        self.file_name = self.csv_dir + "/part" + str(self.part_id) + ".csv"
         self.file_field_names = ['trial_number', 'alpha_id', 'traj_id', 'rhythm_id', 'tempo', 'left_ave_size', 'right_ave_size',
                                  'left_points', 'right_points', 'left_sizes', 'right_sizes']
 
