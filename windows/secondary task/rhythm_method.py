@@ -92,7 +92,7 @@ class RhythmMethod():
         self.start_time = 0.0
         
         self.recording_started = False
-        self.recording_start_time = 0.0
+        self.recording_start_time = None
         
         self.use_intervals = True
         
@@ -139,6 +139,17 @@ class RhythmMethod():
         
         while True:
             
+            # recorded_time = str(time() - self.recording_start_time)
+            # print("recorded_time = %s" % recorded_time)
+            # if entry == "q":
+            if self.recording_start_time and time() - self.recording_start_time > MAX_TIME:
+                print("recorded for %s seconds" % str(time() - self.recording_start_time))
+                print("Stopping recording of tapping data. \n")
+                if self.use_eyetracker:
+                    print("\n Also stopped subscribing to eye tracker data. \n")
+                    self.my_eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self.gaze_data_callback)
+                break
+            
             entry = read_key()
             
             if entry == "right":
@@ -163,12 +174,6 @@ class RhythmMethod():
                 else:
                     self.recorded.append(time() - self.recording_start_time)
             
-            if entry == "q":
-                print("Stopping recording of tapping data. \n")
-                if self.use_eyetracker:
-                    print("\n Also stopped subscribing to eye tracker data. \n")
-                    self.my_eyetracker.unsubscribe_from(tr.EYETRACKER_GAZE_DATA, self.gaze_data_callback)
-                break
         
         self.clean_up_record()
         self.calculate_error()
