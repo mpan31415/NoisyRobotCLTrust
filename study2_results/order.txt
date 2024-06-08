@@ -1,0 +1,36 @@
+
+############# DEMOGRAPHICS #############
+
+1. [/forms/demo/] cleanup.py -> demo_cleaned.csv
+
+2. analyze.ipynb
+
+
+
+############# MAIN FORM #############
+
+1. [/forms/main/] cleanup.py -> main_cleaned.csv
+
+
+
+############# PRIMARY TASK #############
+
+1. [/primary_task/] primary_preprocess.py -> primary_task.csv
+
+
+
+############# TAPPING TASK #############
+
+1. [/tapping_task/] tapping_preprocess.py -> tapping_task.csv
+
+
+
+############# PUPIL DIAMETER #############
+
+1. [/pupil_index/] pupil_preprocess.py -> pupil_index.csv
+
+
+
+############# JOIN ALL DATA #############
+
+1. join_all_data.py -> all_data.csv

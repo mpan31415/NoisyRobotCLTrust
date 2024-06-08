@@ -1,0 +1,11 @@
+pid,order,trust_tech,play_games,play_music
+1,inc,6,2,2
+2,dec,4,4,1
+3,inc,5,4,5
+4,dec,4,5,2
+5,inc,5,3,2
+6,dec,6,5,6
+7,inc,7,2,1
+8,dec,7,7,7
+9,inc,6,7,1
+10,dec,7,1,1
