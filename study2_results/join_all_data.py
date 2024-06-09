@@ -1,6 +1,5 @@
-from pandas import read_csv, DataFrame, merge
+from pandas import read_csv, merge
 from os import getcwd
-from numpy import repeat
 
 
 DEMO_DATA_DIR = getcwd() + "\\study2_results\\forms\\demo\\"
@@ -41,6 +40,38 @@ def get_pupil_data():
     print("Finished reading pupil index data!")
     return df
 
+##########################################################################################
+def replace_outliers_with_mean(series):
+    Q1 = series.quantile(0.25)
+    Q3 = series.quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    # Find the mean of the non-outliers
+    mean_value = series[(series >= lower_bound) & (series <= upper_bound)].mean()
+    # Replace outliers with the mean
+    series = series.apply(lambda x: mean_value if x < lower_bound or x > upper_bound else x)
+    return series
+
+##########################################################################################
+def replace_outliers_within_group(df, group_columns, target_column):
+    # Reset index to ensure group_columns are not in the index
+    df = df.reset_index(drop=True)
+
+    # Function to calculate and replace outliers within each group
+    def replace(group):
+        Q1 = group[target_column].quantile(0.25)
+        Q3 = group[target_column].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        mean_value = group[(group[target_column] >= lower_bound) & (group[target_column] <= upper_bound)][target_column].mean()
+        group[target_column] = group[target_column].apply(lambda x: mean_value if x < lower_bound or x > upper_bound else x)
+        return group
+
+    # Apply the function to each subgroup
+    return df.groupby(group_columns).apply(replace).reset_index(drop=True)
+
 
 ##########################################################################################
 def main():
@@ -62,6 +93,20 @@ def main():
     low_auto = 0.2
     high_auto = 0.8
     joined_df = joined_df[(joined_df['autonomy']==low_auto) | (joined_df['autonomy']==high_auto)]
+    
+    
+    # ############# REPLACE OUTLIERS FOR EACH OF THE MEASURES #############
+    # cols_not_to_check = ['pid','autonomy','auto_grouped','order','trust_tech','play_games','play_music']
+    # all_cols = list(joined_df.columns)
+    
+    # ############ loop through all columns of dataframe and remove outliers ############
+    # for col in all_cols:
+    #     if col in cols_not_to_check:
+    #         continue
+    #     else:
+    #         print("Removing outliers for column = %s" % col)
+    #         joined_df = replace_outliers_within_group(joined_df, ['auto_grouped', 'order'], col)
+            
     
     # write new dataframe to csv file
     dest_path = ALL_DATA_DIR + 'all_data.csv'
