@@ -10,7 +10,7 @@ DEMO_DATA_DIR = getcwd() + "\\study2_results\\forms\\demo\\"
 def get_raw_df():
     raw_results_path = DEMO_DATA_DIR + "demo_raw.csv"
     raw_df = read_csv(raw_results_path)
-    raw_df = raw_df.iloc[:, 17:25]
+    raw_df = raw_df.iloc[1:, 17:25]
     raw_df = raw_df[['Q1', 'Q2', 'Q3', 'Q4', 'Q5_1', 'Q5_2', 'Q5_3']]
     raw_df = raw_df.iloc[2:26, :]
     return raw_df
