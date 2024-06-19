@@ -7,7 +7,7 @@ from math import isnan
 MAIN_DATA_DIR = getcwd() + "\\study2_results\\forms\\main\\"
 
 FIRST_PART_ID = 2
-LAST_PART_ID = 10
+LAST_PART_ID = 25
 
 
 ##########################################################################################

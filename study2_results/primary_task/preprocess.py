@@ -7,7 +7,7 @@ DEMO_DATA_DIR = getcwd() + "\\study2_results\\forms\\demo\\"
 PRIMARY_TASK_DIR = getcwd() + "\\study2_results\\primary_task\\"
 
 FIRST_PART_ID = 2
-LAST_PART_ID = 10
+LAST_PART_ID = 25
 
 
 ##########################################################################################

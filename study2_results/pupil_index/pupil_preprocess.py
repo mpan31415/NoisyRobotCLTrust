@@ -11,7 +11,7 @@ TOBII_DATA_DIR = getcwd() + "\\windows\\secondary task\\data_tobii\\"
 PUPIL_RESULT_DIR = getcwd() + "\\study2_results\\pupil_index\\"
 
 FIRST_PART_ID = 2
-LAST_PART_ID = 10
+LAST_PART_ID = 25
 
 
 ##########################################################################################

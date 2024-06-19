@@ -15,7 +15,7 @@
 
 ############# PRIMARY TASK #############
 
-1. [/primary_task/] primary_preprocess.py -> primary_task.csv
+1. [/primary_task/] preprocess.py -> primary_task.csv
 
 
 

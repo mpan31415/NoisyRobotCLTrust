@@ -7,7 +7,7 @@ TAPPING_CSV_DIR = getcwd() + "\\windows\\secondary task\\data\\"
 TAPPING_TASK_DIR = getcwd() + "\\study2_results\\tapping_task\\"
 
 FIRST_PART_ID = 2
-LAST_PART_ID = 10
+LAST_PART_ID = 25
 
 
 ##########################################################################################
