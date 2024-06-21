@@ -17,11 +17,15 @@
 
 1. [/primary_task/] preprocess.py -> primary_task.csv
 
+2. [/primary_task/] tap_impact_process.py, tap_impact_analysis.ipynb, learning_effect_plot.py
+
 
 
 ############# TAPPING TASK #############
 
 1. [/tapping_task/] tapping_preprocess.py -> tapping_task.csv
+
+2. [/tapping_task/] tap_learning.py  (run twice, once for each of {short, long} errors)
 
 
 
