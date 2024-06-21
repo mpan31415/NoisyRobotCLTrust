@@ -6,8 +6,8 @@ from math import isnan
 
 MAIN_DATA_DIR = getcwd() + "\\study1_results\\questionnaire_logs\\"
 
-FIRST_PART_ID = 2
-LAST_PART_ID = 25
+FIRST_PART_ID = 1
+LAST_PART_ID = 24
 
 
 ##########################################################################################
