@@ -98,6 +98,18 @@ scale_fill_brewer(palette = "Set2") +
 
 ```
 
+```{r do plotting}
+
+bxp1 <- ggboxplot(
+  data_df, x = "auto_grouped", y = "pupil_index",
+  color = "order", palette = "jco",
+  ylim = c(3.5, 5.5), add = "jitter"
+  )
+bxp1
+
+
+```
+
 
 ## Check assumptions
 
@@ -150,15 +162,22 @@ box_m(data_df[, "pupil_index", drop = FALSE], data_df$order)
 ```{r fit model}
 
 ######################### Two-way mixed ANOVA test #########################  
-res.aov <- anova_test(data = data_df, dv = left_index, wid = pid, between = order, within = autonomy)
-anova_left_index <- get_anova_table(res.aov)
-anova_left_index
+# res.aov <- anova_test(data = data_df, dv = left_index, wid = pid, between = order, within = autonomy)
+# anova_left_index <- get_anova_table(res.aov)
+# anova_left_index
+# 
+# res.aov <- anova_test(data = data_df, dv = right_index, wid = pid, between = order, within = autonomy)
+# anova_right_index <- get_anova_table(res.aov)
+# anova_right_index
 
-res.aov <- anova_test(data = data_df, dv = right_index, wid = pid, between = order, within = autonomy)
-anova_right_index <- get_anova_table(res.aov)
-anova_right_index
 
+######################### Two-way mixed ANOVA test #########################  
 res.aov <- anova_test(data = data_df, dv = pupil_index, wid = pid, between = order, within = autonomy)
+anova_pupil_index <- get_anova_table(res.aov)
+anova_pupil_index
+
+#### one-way ANOVA (without order) ####
+res.aov <- anova_test(data = data_df, dv = pupil_index, wid = pid, within = autonomy)
 anova_pupil_index <- get_anova_table(res.aov)
 anova_pupil_index
 

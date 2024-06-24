@@ -87,7 +87,8 @@ ggplot(data_df, aes(x=autonomy, y=per_auto)) +
 
 bxp1 <- ggboxplot(
   data_df, x = "auto_grouped", y = "per_auto",
-  color = "order", palette = "jco"
+  color = "order", palette = "jco",
+  ylim = c(0, 10), add = "jitter"
   )
 bxp1
 
@@ -120,10 +121,18 @@ box_m(data_df[, "per_auto", drop = FALSE], data_df$order)
 
 ```{r fit model}
 
+
 ######################### Two-way mixed ANOVA test #########################  
 res.aov <- anova_test(data = data_df, dv = per_auto, wid = pid, between = order, within = autonomy)
 anova_per_auto <- get_anova_table(res.aov)
 anova_per_auto
+
+
+######################### one-way ANOVA test (without order) #########################  
+res.aov <- anova_test(data = data_df, dv = per_auto, wid = pid, within = autonomy)
+anova_per_auto <- get_anova_table(res.aov)
+anova_per_auto
+
 
 # ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################  
 # pwc <- data_df %>%

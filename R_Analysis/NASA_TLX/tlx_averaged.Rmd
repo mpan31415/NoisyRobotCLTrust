@@ -36,6 +36,8 @@ data_df %>%
   get_summary_stats(tlx_ave, type = "mean_sd")
 
 
+# data_df$tlx_successful = 21 - data_df$tlx_successful
+
 tlx_dims_df <- data.frame(data_df$tlx_mental, data_df$tlx_physical, data_df$tlx_hurried, 
                           data_df$tlx_insecure, data_df$tlx_hard, data_df$tlx_successful)
 
@@ -121,7 +123,8 @@ p
 
 bxp1 <- ggboxplot(
   data_df, x = "auto_grouped", y = "tlx_ave",
-  color = "order", palette = "jco"
+  color = "order", palette = "jco",
+  ylim = c(0, 15), add = "jitter"
   )
 bxp1
 
@@ -161,6 +164,12 @@ anova_tlx_ave <- get_anova_table(res.aov)
 anova_tlx_ave
 
 
+######################### One-way ANOVA test (without order) #########################  
+res.aov <- anova_test(data = data_df, dv = tlx_ave, wid = pid, within = autonomy)
+anova_tlx_ave <- get_anova_table(res.aov)
+anova_tlx_ave
+
+
 # ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
 # pwc <- data_df %>%
 #   group_by(autonomy) %>%
@@ -168,11 +177,11 @@ anova_tlx_ave
 # pwc
 # 
 # ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-data_df %>%
-  pairwise_t_test(
-    tlx_ave ~ autonomy, paired = TRUE,
-    p.adjust.method = "bonferroni"
-)
+# data_df %>%
+#   pairwise_t_test(
+#     tlx_ave ~ autonomy, paired = TRUE,
+#     p.adjust.method = "bonferroni"
+# )
 # 
 # data_df %>%
 #   pairwise_t_test(

@@ -28,7 +28,7 @@ library(ltm)
 ```{r read csv}
 
 setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/studies_combined/")
-data_df <- read_csv("combined_data.csv")
+data_df <- read_csv("combined_data.csv", show_col_types = FALSE)
 
 ######################### get mean and sd (or se) ######################### 
 data_df %>%
@@ -114,7 +114,8 @@ p
 
 bxp1 <- ggboxplot(
   data_df, x = "noisy_robot", y = "per_auto",
-  color = "auto_grouped", palette = "jco"
+  color = "auto_grouped", palette = "jco",
+  ylim = c(0, 10), add = "jitter"
   )
 bxp1
 

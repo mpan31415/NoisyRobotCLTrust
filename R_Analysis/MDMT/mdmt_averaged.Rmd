@@ -121,7 +121,8 @@ p
 
 bxp1 <- ggboxplot(
   data_df, x = "auto_grouped", y = "mdmt_ave",
-  color = "order", palette = "jco"
+  color = "order", palette = "jco",
+  ylim = c(0, 8), add = "jitter"
   )
 bxp1
 
@@ -160,6 +161,11 @@ res.aov <- anova_test(data = data_df, dv = mdmt_ave, wid = pid, between = order,
 anova_mdmt_ave <- get_anova_table(res.aov)
 anova_mdmt_ave
 
+######################### One-way ANOVA (without order) #########################  
+res.aov <- anova_test(data = data_df, dv = mdmt_ave, wid = pid, within = autonomy)
+anova_mdmt_ave <- get_anova_table(res.aov)
+anova_mdmt_ave
+
 
 # ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
 # pwc <- data_df %>%
@@ -168,11 +174,11 @@ anova_mdmt_ave
 # pwc
 # 
 # ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-data_df %>%
-  pairwise_t_test(
-    mdmt_ave ~ autonomy, paired = TRUE,
-    p.adjust.method = "bonferroni"
-)
+# data_df %>%
+#   pairwise_t_test(
+#     mdmt_ave ~ autonomy, paired = TRUE,
+#     p.adjust.method = "bonferroni"
+# )
 # 
 # data_df %>%
 #   pairwise_t_test(

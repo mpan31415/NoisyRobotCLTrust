@@ -114,7 +114,8 @@ p
 
 bxp1 <- ggboxplot(
   data_df, x = "auto_grouped", y = "overall_traj_err",
-  color = "order", palette = "jco"
+  color = "order", palette = "jco",
+  ylim = c(1, 2.5), add = "jitter"
   )
 bxp1
 
@@ -153,6 +154,11 @@ res.aov <- anova_test(data = data_df, dv = overall_traj_err, wid = pid, between 
 anova_overall_traj_err <- get_anova_table(res.aov)
 anova_overall_traj_err
 
+######################### one-way ANOVA test (without order) #########################  
+res.aov <- anova_test(data = data_df, dv = overall_traj_err, wid = pid, within = autonomy)
+anova_overall_traj_err <- get_anova_table(res.aov)
+anova_overall_traj_err
+
 
 # ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
 # pwc <- data_df %>%
@@ -161,11 +167,11 @@ anova_overall_traj_err
 # pwc
 # 
 # ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-data_df %>%
-  pairwise_t_test(
-    overall_traj_err ~ autonomy, paired = TRUE,
-    p.adjust.method = "bonferroni"
-)
+# data_df %>%
+#   pairwise_t_test(
+#     overall_traj_err ~ autonomy, paired = TRUE,
+#     p.adjust.method = "bonferroni"
+# )
 # 
 # data_df %>%
 #   pairwise_t_test(

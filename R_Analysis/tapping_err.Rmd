@@ -98,6 +98,25 @@ scale_fill_brewer(palette = "Set2") +
 
 ```
 
+```{r do plotting}
+
+bxp1 <- ggboxplot(
+  data_df, x = "auto_grouped", y = "tapping_err_short",
+  color = "order", palette = "jco",
+  ylim = c(-10, 20), add = "jitter"
+  )
+bxp1
+
+
+bxp2 <- ggboxplot(
+  data_df, x = "auto_grouped", y = "tapping_err_long",
+  color = "order", palette = "jco",
+  ylim = c(-10, 20), add = "jitter"
+  )
+bxp2
+
+```
+
 
 ## Check assumptions
 
@@ -149,18 +168,36 @@ box_m(data_df[, "tapping_err_ave", drop = FALSE], data_df$order)
 
 ```{r fit model}
 
+
+#### SHORT ####
 ######################### Two-way mixed ANOVA test #########################  
 res.aov <- anova_test(data = data_df, dv = tapping_err_short, wid = pid, between = order, within = autonomy)
 anova_tapping_err_short <- get_anova_table(res.aov)
 anova_tapping_err_short
 
+##### One-way ANOVA (without order) #####
+res.aov <- anova_test(data = data_df, dv = tapping_err_short, wid = pid, within = autonomy)
+anova_tapping_err_short <- get_anova_table(res.aov)
+anova_tapping_err_short
+
+
+#### LONG ####
+######################### Two-way mixed ANOVA test #########################  
 res.aov <- anova_test(data = data_df, dv = tapping_err_long, wid = pid, between = order, within = autonomy)
 anova_tapping_err_long <- get_anova_table(res.aov)
 anova_tapping_err_long
 
-res.aov <- anova_test(data = data_df, dv = tapping_err_ave, wid = pid, between = order, within = autonomy)
-anova_tapping_err_ave <- get_anova_table(res.aov)
-anova_tapping_err_ave
+##### One-way ANOVA (without order) #####
+res.aov <- anova_test(data = data_df, dv = tapping_err_long, wid = pid, within = autonomy)
+anova_tapping_err_short <- get_anova_table(res.aov)
+anova_tapping_err_short
+
+
+
+
+# res.aov <- anova_test(data = data_df, dv = tapping_err_ave, wid = pid, between = order, within = autonomy)
+# anova_tapping_err_ave <- get_anova_table(res.aov)
+# anova_tapping_err_ave
 
 
 # ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################  

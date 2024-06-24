@@ -61,7 +61,8 @@ scale_fill_brewer(palette = "Set2") +
 
 bxp1 <- ggboxplot(
   data_df, x = "auto_grouped", y = "single_trust",
-  color = "order", palette = "jco"
+  color = "order", palette = "jco",
+  ylim = c(0, 10), add = "jitter"
   )
 bxp1
 
@@ -100,12 +101,19 @@ res.aov <- anova_test(data = data_df, dv = single_trust, wid = pid, between = or
 anova_single_trust <- get_anova_table(res.aov)
 anova_single_trust
 
+######################### One-way ANOVA (without order) #########################  
+res.aov <- anova_test(data = data_df, dv = single_trust, wid = pid, within = autonomy)
+anova_single_trust <- get_anova_table(res.aov)
+anova_single_trust
+
+
+
 ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-pwc <- data_df %>%
-  group_by(autonomy) %>%
-  pairwise_t_test(single_trust ~ order, p.adjust.method = "bonferroni")
-pwc
-# 
+# pwc <- data_df %>%
+#   group_by(autonomy) %>%
+#   pairwise_t_test(single_trust ~ order, p.adjust.method = "bonferroni")
+# pwc
+# # 
 # ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
 # data_df %>%
 #   pairwise_t_test(

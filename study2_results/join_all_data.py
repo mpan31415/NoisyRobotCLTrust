@@ -95,17 +95,17 @@ def main():
     joined_df = joined_df[(joined_df['autonomy']==low_auto) | (joined_df['autonomy']==high_auto)]
     
     
-    # ############# REPLACE OUTLIERS FOR EACH OF THE MEASURES #############
-    # cols_not_to_check = ['pid','autonomy','auto_grouped','order','trust_tech','play_games','play_music']
-    # all_cols = list(joined_df.columns)
+    ############# REPLACE OUTLIERS FOR EACH OF THE MEASURES #############
+    cols_not_to_check = ['pid','autonomy','auto_grouped','order','trust_tech','play_games','play_music']
+    all_cols = list(joined_df.columns)
     
-    # ############ loop through all columns of dataframe and remove outliers ############
-    # for col in all_cols:
-    #     if col in cols_not_to_check:
-    #         continue
-    #     else:
-    #         print("Removing outliers for column = %s" % col)
-    #         joined_df = replace_outliers_within_group(joined_df, ['auto_grouped', 'order'], col)
+    ############ loop through all columns of dataframe and remove outliers ############
+    for col in all_cols:
+        if col in cols_not_to_check:
+            continue
+        else:
+            print("Removing outliers for column = %s" % col)
+            joined_df = replace_outliers_within_group(joined_df, ['auto_grouped', 'order'], col)
             
     
     # write new dataframe to csv file

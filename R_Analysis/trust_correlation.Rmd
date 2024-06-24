@@ -1,0 +1,98 @@
+---
+title: "p_trust"
+output: html_document
+date: "2023-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Analysis script for "
+
+```{r load libraries}
+library(readr)
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+library(stats)
+library(lme4)
+library(dplyr)
+library(ez)
+```
+
+
+## Extract dataframe from csv file and get (mean, sd) or (mean, se) summary
+
+```{r read csv}
+
+setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study2_results/")
+data_df <- read_csv("all_data.csv")
+
+
+######################### scatterplot ######################### 
+ggscatter(data_df, x = "mdmt_ave", y = "single_trust",
+          add = "reg.line",                                 # Add regression line
+          conf.int = TRUE,                                  # Add confidence interval
+          add.params = list(color = "blue",
+                            fill = "lightgray"),
+          xlab = "Averaged MDMT", ylab = "Single-Scale Trust"
+          )+
+  stat_cor(method = "pearson", label.x = 1, label.y = 7.5)  # Add correlation coefficient
+
+
+######################### correlation test ######################### 
+res <- cor.test(data_df$mdmt_ave, data_df$single_trust, 
+                    method = "pearson")
+res
+
+```
+
+
+```{r read csv}
+
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_reliable, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_capable, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_predictable, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_skilled, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_someone, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_competent, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_consistent, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_meticulous, data_df$p_trust, method = "pearson")
+# res
+# 
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_reliable_ave, data_df$p_trust, method = "pearson")
+# res
+# 
+# ######################### correlation test ######################### 
+# res <- cor.test(data_df$mdmt_capable_ave, data_df$p_trust, method = "pearson")
+# res
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
