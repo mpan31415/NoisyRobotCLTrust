@@ -28,7 +28,10 @@ library(ltm)
 ```{r read csv}
 
 setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study2_results/")
-data_df <- read_csv("all_data.csv")
+data_df <- read_csv("sliced_data.csv")
+
+auto_levels_order = c("high", "low")
+data_df$auto_grouped = factor(data_df$auto_grouped, levels = auto_levels_order)
 
 ######################### get mean and sd (or se) ######################### 
 data_df %>%
@@ -115,7 +118,9 @@ p
 bxp1 <- ggboxplot(
   data_df, x = "auto_grouped", y = "overall_traj_err",
   color = "order", palette = "jco",
-  ylim = c(1, 2.5), add = "jitter"
+  # ylim = c(1, 2.5), 
+  ylim = c(0, 3), 
+  add = "jitter"
   )
 bxp1
 

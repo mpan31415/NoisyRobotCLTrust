@@ -27,8 +27,8 @@ library(ltm)
 
 ```{r read csv}
 
-setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study2_results/")
-data_df <- read_csv("all_data.csv")
+setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study1_results/")
+data_df <- read_csv("sliced_data.csv")
 
 ######################### get mean and sd (or se) ######################### 
 data_df %>%

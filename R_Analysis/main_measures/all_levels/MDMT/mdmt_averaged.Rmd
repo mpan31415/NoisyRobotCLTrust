@@ -1,0 +1,192 @@
+---
+title: "p_trust"
+output: html_document
+date: "2023-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Analysis script for "
+
+```{r load libraries}
+library(readr)
+library(tidyverse)
+library(ggpubr)
+library(rstatix)
+library(stats)
+library(lme4)
+library(dplyr)
+library(ez)
+library(ltm)
+```
+
+
+## Extract dataframe from csv file and get (mean, sd) or (mean, se) summary
+
+```{r read csv}
+
+setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study1_results/")
+data_df <- read_csv("all_data.csv")
+
+######################### get mean and sd (or se) ######################### 
+data_df %>%
+  group_by(autonomy, order) %>%
+  get_summary_stats(mdmt_ave, type = "mean_sd")
+
+
+mdmt_dims_df <- data.frame(data_df$mdmt_reliable, data_df$mdmt_capable, data_df$mdmt_predictable, data_df$mdmt_skilled, 
+                          data_df$mdmt_counton, data_df$mdmt_competent, data_df$mdmt_consistent, data_df$mdmt_meticulous)
+
+######################### calculate Cronbach's Alpha with 95% confidence interval ######################### 
+cronbach.alpha(mdmt_dims_df, CI=TRUE)
+
+
+```
+
+## Plots
+
+```{r do plotting}
+
+# ######################### cool box plot (courtesy of Sarah) ######################### 
+# ggplot(data_df,aes(x=order,y=mdmt_ave, fill=order))+geom_boxplot(aes(fill=order)) + labs( x = "Order", y = "mdmt_ave", fill = "Order") +   theme_minimal() +
+# # stat_summary(fun = mean, geom = "point",size = 3, shape = 2, position = position_dodge(0.75), show.legend = FALSE) +
+# scale_fill_brewer(palette = "Set2") +
+#     theme(plot.title = element_text(size = 15, face = "bold"),
+#         axis.title.x = element_text(size = 14, face = "bold"),
+#         axis.title.y = element_text(size = 14, face = "bold"),
+#         axis.text = element_text(size = 16),
+#         legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 11),
+#         legend.position= "none") +
+#   facet_grid(. ~ autonomy) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#         strip.text.x = element_text(angle = 0, hjust = 0.5, size = 12), legend.position = "none")
+# 
+# 
+# ######################### cool dot plot ######################### 
+# ggplot(data_df,aes(x=order,y=mdmt_ave, fill=order)) + geom_boxplot() + geom_dotplot(binaxis='y', stackdir='center', stackratio=1.5, dotsize=1.2) + 
+#                     labs( x = "Order", y = "mdmt_ave", fill = "Order") + theme_minimal() +
+# # stat_summary(fun = mean, geom = "point",size = 3, shape = 2, position = position_dodge(0.75), show.legend = FALSE) +
+# scale_fill_brewer(palette = "Set2") +
+#     theme(plot.title = element_text(size = 15, face = "bold"),
+#         axis.title.x = element_text(size = 14, face = "bold"),
+#         axis.title.y = element_text(size = 14, face = "bold"),
+#         axis.text = element_text(size = 16),
+#         legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 11),
+#         legend.position= "none") +
+#   facet_grid(. ~ autonomy) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#         strip.text.x = element_text(angle = 0, hjust = 0.5, size = 12), legend.position = "none")
+
+
+## define custom median function
+plot.median <- function(x) {
+  m <- median(x)
+  c(y = m, ymin = m, ymax = m)
+}
+
+## define custom mean function
+plot.median <- function(x) {
+  m <- mean(x)
+  c(y = m, ymin = m, ymax = m)
+}
+
+######################### cool dot plot 2 ######################### 
+p <- ggplot(data_df,aes(x=order,y=mdmt_ave, fill=order)) + geom_dotplot(binaxis='y', stackdir='center', stackratio=1.5, dotsize=0.6) + 
+                    labs( x = "Order", y = "MDMT", fill = "Order") + theme_minimal() +
+stat_summary(fun.y = mean, geom="crossbar", colour="red", width=0.5, size=0.5) +
+scale_fill_brewer(palette = "Set2") +
+    theme(plot.title = element_text(size = 15, face = "bold"),
+        axis.title.x = element_text(size = 18, face = "bold"),
+        axis.title.y = element_text(size = 18, face = "bold"),
+        axis.text = element_text(size = 18),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 11),
+        legend.position= "none") +
+  facet_grid(. ~ auto_grouped, ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.text.x = element_text(angle = 0, hjust = 0.5, size = 18), legend.position = "none")
+
+p
+
+# ggexport(p, filename = "pdfs/tlx.pdf")
+
+```
+
+
+```{r do plotting}
+
+bxp1 <- ggboxplot(
+  data_df, x = "autonomy", y = "mdmt_ave",
+  color = "order", palette = "jco",
+  ylim = c(0, 8), add = "jitter"
+  )
+bxp1
+
+```
+
+
+## Check assumptions
+
+```{r check assumptions}
+
+######################### check for outliers ######################### 
+data_df %>%
+  group_by(autonomy, order) %>%
+  identify_outliers(mdmt_ave)
+
+######################### check normality ######################### 
+ggqqplot(data_df, "mdmt_ave", ggtheme = theme_bw()) + facet_grid(autonomy ~ order)
+
+######################### check variance homogeneity ######################### 
+data_df %>%
+  group_by(autonomy) %>%
+  levene_test(mdmt_ave ~ order)
+
+######################### check covariance homogeneity ######################### 
+box_m(data_df[, "mdmt_ave", drop = FALSE], data_df$order)
+
+```
+
+
+## Fit Model
+
+```{r fit model}
+
+######################### Two-way mixed ANOVA test #########################  
+res.aov <- anova_test(data = data_df, dv = mdmt_ave, wid = pid, between = order, within = autonomy)
+anova_mdmt_ave <- get_anova_table(res.aov)
+anova_mdmt_ave
+
+######################### One-way ANOVA (without order) #########################  
+res.aov <- anova_test(data = data_df, dv = mdmt_ave, wid = pid, within = autonomy)
+anova_mdmt_ave <- get_anova_table(res.aov)
+anova_mdmt_ave
+
+
+# ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
+# pwc <- data_df %>%
+#   group_by(autonomy) %>%
+#   pairwise_t_test(mdmt_ave ~ order, p.adjust.method = "bonferroni")
+# pwc
+# 
+# ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
+# data_df %>%
+#   pairwise_t_test(
+#     mdmt_ave ~ autonomy, paired = TRUE,
+#     p.adjust.method = "bonferroni"
+# )
+# 
+# data_df %>%
+#   pairwise_t_test(
+#     mdmt_ave ~ order, 
+#     p.adjust.method = "bonferroni"
+#   )
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

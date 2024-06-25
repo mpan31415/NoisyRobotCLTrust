@@ -26,7 +26,7 @@ library(ez)
 
 ```{r read csv}
 
-setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study2_results/")
+setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study1_results/")
 data_df <- read_csv("all_data.csv")
 
 ######################### get mean and sd (or se) ######################### 
@@ -60,7 +60,7 @@ scale_fill_brewer(palette = "Set2") +
 ```{r do plotting}
 
 bxp1 <- ggboxplot(
-  data_df, x = "auto_grouped", y = "single_trust",
+  data_df, x = "autonomy", y = "single_trust",
   color = "order", palette = "jco",
   ylim = c(0, 10), add = "jitter"
   )

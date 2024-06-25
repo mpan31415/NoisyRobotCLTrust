@@ -19,6 +19,8 @@ library(stats)
 library(lme4)
 library(dplyr)
 library(ez)
+library(viridis)
+library(ggpointdensity)
 ```
 
 
@@ -26,7 +28,7 @@ library(ez)
 
 ```{r read csv}
 
-setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study2_results/")
+setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/study1_results/")
 data_df <- read_csv("all_data.csv")
 
 ######################### get mean and sd (or se) ######################### 
@@ -35,23 +37,23 @@ data_df %>%
   get_summary_stats(per_auto, type = "mean_sd")
 
 
-######################### NASA-TLX ######################### 
-p <- ggplot(data_df, aes(x=order, y=per_auto, fill=factor(interaction(order, auto_grouped)))) + 
-  geom_dotplot(binaxis='y', stackdir='center', stackratio=1.5, dotsize=1.4) + 
-  labs( x = "Order", y = "Perceived Autonomy", fill = "Autonomy Level") + theme_minimal() +
-  stat_summary(fun.y = mean, geom="crossbar", colour="red", width=0.5, size=0.7) +
-  scale_fill_manual(values=c("#0000CC", "#3399FF", "#006600", "#00CC00")) +
-    theme(plot.title = element_text(size = 15, face = "bold"),
-        axis.title.x = element_text(size = 28, face = "bold"),
-        axis.title.y = element_text(size = 28, face = "bold"),
-        axis.text = element_text(size = 24),
-        legend.title = element_text(size = 12),
-        legend.text = element_text(size = 11),
-        legend.position= "none") +
-  facet_grid(. ~ auto_grouped, ) +
-  theme(axis.text.x = element_text(angle = 0, hjust = 1, size = 24, face = "bold"),
-        strip.text.x = element_text(angle = 0, hjust = 0.5, size = 28, face = "bold"), legend.position = "none")
-p
+# ######################### NASA-TLX ######################### 
+# p <- ggplot(data_df, aes(x=order, y=per_auto, fill=factor(interaction(order, auto_grouped)))) + 
+#   geom_dotplot(binaxis='y', stackdir='center', stackratio=1.5, dotsize=1.4) + 
+#   labs( x = "Order", y = "Perceived Autonomy", fill = "Autonomy Level") + theme_minimal() +
+#   stat_summary(fun.y = mean, geom="crossbar", colour="red", width=0.5, size=0.7) +
+#   scale_fill_manual(values=c("#0000CC", "#3399FF", "#006600", "#00CC00")) +
+#     theme(plot.title = element_text(size = 15, face = "bold"),
+#         axis.title.x = element_text(size = 28, face = "bold"),
+#         axis.title.y = element_text(size = 28, face = "bold"),
+#         axis.text = element_text(size = 24),
+#         legend.title = element_text(size = 12),
+#         legend.text = element_text(size = 11),
+#         legend.position= "none") +
+#   facet_grid(. ~ auto_grouped, ) +
+#   theme(axis.text.x = element_text(angle = 0, hjust = 1, size = 24, face = "bold"),
+#         strip.text.x = element_text(angle = 0, hjust = 0.5, size = 28, face = "bold"), legend.position = "none")
+# p
 
 
 ```
@@ -77,8 +79,12 @@ scale_fill_brewer(palette = "Set2") +
 
 
 ######################### scatterplot ######################### 
-ggplot(data_df, aes(x=autonomy, y=per_auto)) + 
-    geom_point()
+# ggplot(data_df, aes(x=autonomy, y=per_auto)) + 
+#     geom_point()
+
+ggplot(data = data_df, mapping = aes(x = autonomy, y = per_auto)) +
+  geom_pointdensity(size = 5) +
+  scale_color_viridis()
 
 
 ```
@@ -86,7 +92,7 @@ ggplot(data_df, aes(x=autonomy, y=per_auto)) +
 ```{r do plotting}
 
 bxp1 <- ggboxplot(
-  data_df, x = "auto_grouped", y = "per_auto",
+  data_df, x = "auto_level", y = "per_auto",
   color = "order", palette = "jco",
   ylim = c(0, 10), add = "jitter"
   )
