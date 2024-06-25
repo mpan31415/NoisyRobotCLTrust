@@ -8,8 +8,8 @@ PUPIL_DATA_DIR = getcwd() + "\\study1_results\\tobii_logs\\"
 def read_data():
     file_path = PUPIL_DATA_DIR + "\\tobii_preprocessed.csv"
     df = read_csv(file_path)
-    index_med_auto = df[ (df['autonomy'] == 0.4) ].index
-    df = df.drop(index_med_auto)
+    # index_med_auto = df[ (df['autonomy'] == 0.4) ].index
+    # df = df.drop(index_med_auto)
     return df
 
 

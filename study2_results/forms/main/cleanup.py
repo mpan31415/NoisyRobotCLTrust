@@ -182,7 +182,7 @@ def preprocess():
     result_df = DataFrame(df_dict)
     
     ###### remove medium autonomy rows ######
-    result_df = remove_med_auto(result_df)
+    # result_df = remove_med_auto(result_df)
     
     # write new dataframe to csv file
     dest_path = MAIN_DATA_DIR + 'main_cleaned.csv'

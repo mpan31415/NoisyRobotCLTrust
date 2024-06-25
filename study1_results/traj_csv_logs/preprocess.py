@@ -110,7 +110,7 @@ def preprocess():
     processed_df = DataFrame(df_dict)
     
     # remove the first round (medium autonomy condition)
-    processed_df = remove_med_auto(processed_df)
+    # processed_df = remove_med_auto(processed_df)
     
     # write new dataframe to csv file
     dest_path = PRIMARY_TASK_DIR + '\\primary_task.csv'

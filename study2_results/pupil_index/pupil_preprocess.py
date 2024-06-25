@@ -247,7 +247,8 @@ def preprocess():
     }
     processed_df = DataFrame(df_dict)
     
-    processed_df = remove_med_auto(processed_df)
+    # processed_df = remove_med_auto(processed_df)
+    
     # write new dataframe to csv file
     dest_path = PUPIL_RESULT_DIR + "pupil_index.csv"
     processed_df.to_csv(dest_path, index=False)

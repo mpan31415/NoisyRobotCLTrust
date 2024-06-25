@@ -89,30 +89,37 @@ def main():
     m3 = merge(m2, main_df, how="inner", on=['pid', 'autonomy', 'auto_grouped'])
     joined_df = merge(m3, demo_df, how="inner", on=['pid'])    # automatically casted
     
-    # perform back slicing - only keep the second round of each autonomy block (2 rounds)
-    low_auto = 0.2
-    high_auto = 0.8
-    joined_df = joined_df[(joined_df['autonomy']==low_auto) | (joined_df['autonomy']==high_auto)]
     
+    ############# REPLACE OUTLIERS FOR EACH OF THE MEASURES #############
+    cols_not_to_check = ['pid','autonomy','auto_grouped','order','trust_tech','play_games','play_music']
+    all_cols = list(joined_df.columns)
     
-    # ############# REPLACE OUTLIERS FOR EACH OF THE MEASURES #############
-    # cols_not_to_check = ['pid','autonomy','auto_grouped','order','trust_tech','play_games','play_music']
-    # all_cols = list(joined_df.columns)
-    
-    # ############ loop through all columns of dataframe and remove outliers ############
-    # for col in all_cols:
-    #     if col in cols_not_to_check:
-    #         continue
-    #     else:
-    #         print("Removing outliers for column = %s" % col)
-    #         joined_df = replace_outliers_within_group(joined_df, ['auto_grouped', 'order'], col)
+    ############ loop through all columns of dataframe and remove outliers ############
+    for col in all_cols:
+        if col in cols_not_to_check:
+            continue
+        else:
+            print("Removing outliers for column = %s" % col)
+            joined_df = replace_outliers_within_group(joined_df, ['auto_grouped', 'order'], col).sort_values("pid")
             
     
-    # write new dataframe to csv file
+    ######### 1. write complete dataframe (with all 5 autonomy levels) to csv file #########
     dest_path = ALL_DATA_DIR + 'all_data.csv'
     joined_df.to_csv(dest_path, index=False)
     
-    print(" \n Successfully written ALL DATA csv file! \n")
+    print(" \n Successfully written ALL DATA csv file! \n") 
+    
+    
+    ######### 2. write back sliced datafrmae - only keep the second round of each autonomy block (2 rounds) - to csv file #########
+    low_auto = 0.2
+    high_auto = 0.8
+    joined_df = joined_df[(joined_df['autonomy']==low_auto) | (joined_df['autonomy']==high_auto)].sort_values("pid")
+    
+    # write new dataframe to csv file
+    dest_path = ALL_DATA_DIR + 'sliced_data.csv'
+    joined_df.to_csv(dest_path, index=False)
+    
+    print(" \n Successfully written SLICED DATA csv file! \n")
     
     
 ##########################################################################################
