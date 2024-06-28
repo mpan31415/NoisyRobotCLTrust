@@ -120,19 +120,21 @@ sudo python3 rhythm_method.py
 
 <a id='4'></a>
 
-## Dataframes
+## Results
 
-The data logged throughout each of the experimental sessions are written to `.csv` files. These include both the main measures of interest and the initial demographics information collected at the start of each session. The final processed `.csv` files are all located in the `/experiment/grouped_dataframes/` directory. Their descriptions and file names are summarized below:
+The data logged throughout each of the experimental sessions are written to `.csv` files. These include both the main measures of interest and the initial demographics information collected at the start of each session. Results from both the [previous study](https://github.com/mpan31415/AutonomyCLTrust) and the current study are included in this repository. Both the pre-processing scripts and the resulting processed `.csv` files are located in sub-folders within the `/study1_results` and `/study2_results` directory. The measures are summarized below:
 
-| Measure | Description | Filename |
-| ------ | ------ | ------ |
-| Trajectory Tracking Error | RMSE error (cm) between the reference and recorded trajectories of each trial | `grouped_traj_err.csv` |
-| Rhythm Tapping Error | Normalized percentage error (%) of the inter-tap interval lengths (relative to participant's baseline) | `grouped_tapping_err.csv` |
-| Pupil Diameter | Pupil diameter (mm) for both left and right eyes, and averaged across them | `grouped_pupil.csv` |
-| Perceived Autonomy | Participants' perceived level of robot autonomy, rated on a 10-point Likert scale | `grouped_p_auto.csv` |
-| Perceived Trust | Participants' self-reported trust using a 10-point Likert scale | `grouped_p_trust.csv` |
-| NASA-TLX | Self-reported cognitive load levels across all 6 aspects of the [NASA-TLX](https://www.sciencedirect.com/science/article/abs/pii/S0166411508623869) questionnaire | `grouped_tlx.csv` |
-| MDMT |  Self-reported trust levels across all 8 dimensions of the [MDMT](https://research.clps.brown.edu/SocCogSci/Measures/CurrentVersion_MDMT.pdf) questionnaire | `grouped_mdmt.csv` |
+| Measure | Description |
+| ---- | ---- |
+| Trajectory Tracking Error | RMSE error (cm) between the reference and recorded trajectories of each trial |
+| Rhythm Tapping Error | Normalized percentage error (%) of the inter-tap interval lengths (relative to participant's baseline) |
+| Pupil Diameter | Pupil diameter (mm) for both left and right eyes, and averaged across them |
+| Perceived Autonomy | Participants' perceived level of robot autonomy, rated on a 10-point Likert scale |
+| Perceived Trust | Participants' self-reported trust using a 10-point Likert scale |
+| NASA-TLX | Self-reported cognitive load levels across all 6 aspects of the [NASA-TLX](https://www.sciencedirect.com/science/article/abs/pii/S0166411508623869) questionnaire |
+| MDMT |  Self-reported trust levels across all 8 dimensions of the [MDMT](https://research.clps.brown.edu/SocCogSci/Measures/CurrentVersion_MDMT.pdf) questionnaire |
+
+We also combined the results from both studies to explore the effect of noisy robot behavior on our interested measures. These are included in the `/studies_combined` folder.
 
 
 <br>
@@ -141,12 +143,13 @@ The data logged throughout each of the experimental sessions are written to `.cs
 
 ## Data Analysis
 
-The data analysis was performed in [RStudio](https://posit.co/download/rstudio-desktop/), leveraging existing libraries in the [R programming langauge](https://www.r-project.org/about.html). All R scripts used are located in the `/analysis/R_scripts/` directory, which has the following three sub-folders:
-- `indiv_measures`: Individual analysis of autonomy's effect on each of the measures using ANOVAs
-- `interactions`: Analysis of correlations and interaction effects between the measures and autonomy conditions
-- `learning_effect`: Identification of possible learning effects for the repeated measures within each round using Linear Mixed Models
+The data analysis was performed in [RStudio](https://posit.co/download/rstudio-desktop/), leveraging existing libraries in the [R programming langauge](https://www.r-project.org/about.html). All R scripts used for analyzing the results of this study are located in the `/R_Analysis` directory, which has the following two sub-folders:
+- `/interactions`: Analysis of correlations and interaction effects between the measures and autonomy conditions.
+- `/main_measures`: Individual analysis of autonomy's effect on each of the measures using ANOVAs. The `/all_levels` and `/two_levels` sub-folders contain the R scripts for analyzing across **all** and **only high and low** autonomy levels respectively.
 
-Plots are also generated in R, and the code are embedded within the above R scripts. The preliminary plots are located in the `/analysis/plots/` directory. The actual plots used in the paper (in `.jpg` format) can be found in the `/analysis/pdf_plots/pdf_to_jpg/` directory.
+Plots are also generated in R, and the code are embedded within the above R scripts.
+
+As previously mentioned, the combined data from both the previous study and this study unwent further analysis. The R scripts are located in the `/combined_R_Analysis` folder.
 
 
 <br>
@@ -155,14 +158,8 @@ Plots are also generated in R, and the code are embedded within the above R scri
 
 ## Paper and Citation Info
 
-The manuscript and supplementary video can be found on [IEEEXplore](https://ieeexplore.ieee.org/abstract/document/10517390).
+The manuscript and supplementary video can be found on [TODO](https://ieeexplore.ieee.org/abstract/document/10517390).
 If you find our work useful, please consider citing it using:
 ```
-@article{pan2024effects,
-  title={Effects of Shared Control on Cognitive Load and Trust in Teleoperated Trajectory Tracking},
-  author={Pan, Jiahe and Eden, Jonathan and Oetomo, Denny and Johal, Wafa},
-  journal={IEEE Robotics and Automation Letters},
-  year={2024},
-  publisher={IEEE}
-}
+TODO
 ```
