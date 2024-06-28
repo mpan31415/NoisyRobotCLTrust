@@ -34,7 +34,7 @@ data_df <- read_csv("sliced_combined_data.csv")
 ######################### get mean and sd (or se) ######################### 
 data_df %>%
   group_by(autonomy, noisy_robot) %>%
-  get_summary_stats(pupil_index, type = "mean_sd")
+  get_summary_stats(tapping_err_short, type = "mean_sd")
 
 ```
 
@@ -43,7 +43,7 @@ data_df %>%
 ```{r do plotting}
 
 ######################### cool box plot (courtesy of Sarah) ######################### 
-ggplot(data_df,aes(x=noisy_robot,y=left_index, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "left_index", fill = "noisy_robot") +   theme_minimal() +
+ggplot(data_df,aes(x=noisy_robot,y=tapping_err_short, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "tapping_err_short", fill = "noisy_robot") +   theme_minimal() +
 # stat_summary(fun = mean, geom = "point",size = 3, shape = 2, position = position_dodge(0.75), show.legend = FALSE) +
 scale_fill_brewer(palette = "Set2") +
     theme(plot.title = element_text(size = 15, face = "bold"),
@@ -59,7 +59,7 @@ scale_fill_brewer(palette = "Set2") +
 
 
 ######################### cool box plot (courtesy of Sarah) ######################### 
-ggplot(data_df,aes(x=noisy_robot,y=right_index, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "right_index", fill = "noisy_robot") +   theme_minimal() +
+ggplot(data_df,aes(x=noisy_robot,y=tapping_err_long, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "tapping_err_long", fill = "noisy_robot") +   theme_minimal() +
 # stat_summary(fun = mean, geom = "point",size = 3, shape = 2, position = position_dodge(0.75), show.legend = FALSE) +
 scale_fill_brewer(palette = "Set2") +
     theme(plot.title = element_text(size = 15, face = "bold"),
@@ -75,7 +75,7 @@ scale_fill_brewer(palette = "Set2") +
 
 
 ######################### cool box plot (courtesy of Sarah) ######################### 
-ggplot(data_df,aes(x=noisy_robot,y=pupil_index, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "Pupil Diameter", fill = "noisy_robot") +   theme_minimal() +
+ggplot(data_df,aes(x=noisy_robot,y=tapping_err_ave, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "tapping_err_ave", fill = "noisy_robot") +   theme_minimal() +
 # stat_summary(fun = mean, geom = "point",size = 3, shape = 2, position = position_dodge(0.75), show.legend = FALSE) +
 scale_fill_brewer(palette = "Set2") +
     theme(plot.title = element_text(size = 15, face = "bold"),
@@ -95,22 +95,21 @@ scale_fill_brewer(palette = "Set2") +
 ```{r do plotting}
 
 bxp <- ggboxplot(
-  data_df, x = "auto_grouped", y = "pupil_index",
+  data_df, x = "auto_grouped", y = "tapping_err_short",
   color = "order", palette = "jco",
   facet.by = "noisy_robot",
-  ylim = c(0, 6), add = "jitter"
+  ylim = c(-10, 20), add = "jitter"
   )
 bxp
 
 bxp <- ggboxplot(
-  data_df, x = "auto_grouped", y = "pupil_index",
+  data_df, x = "auto_grouped", y = "tapping_err_short",
   color = "noisy_robot", palette = "jco",
-  ylim = c(0, 6), add = "jitter"
+  ylim = c(-10, 20), add = "jitter"
   )
 bxp
 
 ```
-
 
 
 ## Check assumptions
@@ -120,19 +119,19 @@ bxp
 ######################### check for outliers ######################### 
 data_df %>%
   group_by(noisy_robot, order, auto_grouped) %>%
-  identify_outliers(pupil_index)
+  identify_outliers(tapping_err_short)
 
 ######################### Shapiro-Wilk test for normality ######################### 
 data_df %>%
   group_by(noisy_robot, order, auto_grouped) %>%
-  shapiro_test(pupil_index)
+  shapiro_test(tapping_err_short)
 
-ggqqplot(data_df, "pupil_index", ggtheme = theme_bw()) + facet_grid(auto_grouped ~ noisy_robot, labeller = "label_both")
+ggqqplot(data_df, "tapping_err_short", ggtheme = theme_bw()) + facet_grid(auto_grouped ~ noisy_robot, labeller = "label_both")
 
 ######################### check variance homogeneity ######################### 
 data_df %>%
   group_by(auto_grouped) %>%
-  levene_test(pupil_index ~ noisy_robot*order)
+  levene_test(tapping_err_short ~ noisy_robot*order)
 
 ```
 
@@ -142,7 +141,7 @@ data_df %>%
 ```{r fit model}
 
 ######################### Three-way mixed ANOVA test #########################  
-res.aov <- anova_test(data = data_df, dv = pupil_index, wid = pid, within = auto_grouped, between = c(noisy_robot, order))
+res.aov <- anova_test(data = data_df, dv = tapping_err_short, wid = pid, within = auto_grouped, between = c(noisy_robot, order))
 anova_per_auto <- get_anova_table(res.aov)
 anova_per_auto
 

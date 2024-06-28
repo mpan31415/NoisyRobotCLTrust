@@ -19,6 +19,7 @@ library(stats)
 library(lme4)
 library(dplyr)
 library(ez)
+library(ltm)
 ```
 
 
@@ -27,21 +28,13 @@ library(ez)
 ```{r read csv}
 
 setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/studies_combined/")
-data_df <- read_csv("combined_data.csv")
+data_df <- read_csv("sliced_combined_data.csv")
 
 
 ######################### get mean and sd (or se) ######################### 
 data_df %>%
   group_by(autonomy, noisy_robot) %>%
-  get_summary_stats(tapping_err_short, type = "mean_sd")
-
-data_df %>%
-  group_by(autonomy, noisy_robot) %>%
   get_summary_stats(tapping_err_long, type = "mean_sd")
-
-data_df %>%
-  group_by(autonomy, noisy_robot) %>%
-  get_summary_stats(tapping_err_ave, type = "mean_sd")
 
 ```
 
@@ -50,7 +43,7 @@ data_df %>%
 ```{r do plotting}
 
 ######################### cool box plot (courtesy of Sarah) ######################### 
-ggplot(data_df,aes(x=noisy_robot,y=tapping_err_short, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "tapping_err_short", fill = "noisy_robot") +   theme_minimal() +
+ggplot(data_df,aes(x=noisy_robot,y=tapping_err_long, fill=noisy_robot))+geom_boxplot(aes(fill=noisy_robot)) + labs( x = "noisy_robot", y = "tapping_err_long", fill = "noisy_robot") +   theme_minimal() +
 # stat_summary(fun = mean, geom = "point",size = 3, shape = 2, position = position_dodge(0.75), show.legend = FALSE) +
 scale_fill_brewer(palette = "Set2") +
     theme(plot.title = element_text(size = 15, face = "bold"),
@@ -101,23 +94,20 @@ scale_fill_brewer(palette = "Set2") +
 
 ```{r do plotting}
 
-bxp1 <- ggboxplot(
-  data_df, x = "noisy_robot", y = "tapping_err_short",
-  color = "auto_grouped", palette = "jco"
+bxp <- ggboxplot(
+  data_df, x = "auto_grouped", y = "tapping_err_long",
+  color = "order", palette = "jco",
+  facet.by = "noisy_robot",
+  ylim = c(-10, 20), add = "jitter"
   )
-bxp1
+bxp
 
-bxp1 <- ggboxplot(
-  data_df, x = "noisy_robot", y = "tapping_err_long",
-  color = "auto_grouped", palette = "jco"
+bxp <- ggboxplot(
+  data_df, x = "auto_grouped", y = "tapping_err_long",
+  color = "noisy_robot", palette = "jco",
+  ylim = c(-10, 20), add = "jitter"
   )
-bxp1
-
-bxp1 <- ggboxplot(
-  data_df, x = "noisy_robot", y = "tapping_err_ave",
-  color = "auto_grouped", palette = "jco"
-  )
-bxp1
+bxp
 
 ```
 
@@ -128,42 +118,20 @@ bxp1
 
 ######################### check for outliers ######################### 
 data_df %>%
-  group_by(autonomy, noisy_robot) %>%
-  identify_outliers(tapping_err_short)
-
-data_df %>%
-  group_by(autonomy, noisy_robot) %>%
+  group_by(noisy_robot, order, auto_grouped) %>%
   identify_outliers(tapping_err_long)
 
+######################### Shapiro-Wilk test for normality ######################### 
 data_df %>%
-  group_by(autonomy, noisy_robot) %>%
-  identify_outliers(tapping_err_ave)
+  group_by(noisy_robot, order, auto_grouped) %>%
+  shapiro_test(tapping_err_long)
 
-
-######################### check normality ######################### 
-ggqqplot(data_df, "tapping_err_short", ggtheme = theme_bw()) + facet_grid(autonomy ~ noisy_robot)
-ggqqplot(data_df, "tapping_err_long", ggtheme = theme_bw()) + facet_grid(autonomy ~ noisy_robot)
-ggqqplot(data_df, "tapping_err_ave", ggtheme = theme_bw()) + facet_grid(autonomy ~ noisy_robot)
-
+ggqqplot(data_df, "tapping_err_long", ggtheme = theme_bw()) + facet_grid(auto_grouped ~ noisy_robot, labeller = "label_both")
 
 ######################### check variance homogeneity ######################### 
 data_df %>%
-  group_by(autonomy) %>%
-  levene_test(tapping_err_short ~ noisy_robot)
-
-data_df %>%
-  group_by(autonomy) %>%
-  levene_test(tapping_err_long ~ noisy_robot)
-
-data_df %>%
-  group_by(autonomy) %>%
-  levene_test(tapping_err_ave ~ noisy_robot)
-
-
-######################### check covariance homogeneity ######################### 
-box_m(data_df[, "tapping_err_short", drop = FALSE], data_df$noisy_robot)
-box_m(data_df[, "tapping_err_long", drop = FALSE], data_df$noisy_robot)
-box_m(data_df[, "tapping_err_ave", drop = FALSE], data_df$noisy_robot)
+  group_by(auto_grouped) %>%
+  levene_test(tapping_err_long ~ noisy_robot*order)
 
 ```
 
@@ -172,38 +140,10 @@ box_m(data_df[, "tapping_err_ave", drop = FALSE], data_df$noisy_robot)
 
 ```{r fit model}
 
-######################### Two-way mixed ANOVA test #########################  
-res.aov <- anova_test(data = data_df, dv = tapping_err_short, wid = pid, between = noisy_robot, within = autonomy)
-anova_tapping_err_short <- get_anova_table(res.aov)
-anova_tapping_err_short
-
-res.aov <- anova_test(data = data_df, dv = tapping_err_long, wid = pid, between = noisy_robot, within = autonomy)
-anova_tapping_err_long <- get_anova_table(res.aov)
-anova_tapping_err_long
-
-res.aov <- anova_test(data = data_df, dv = tapping_err_ave, wid = pid, between = noisy_robot, within = autonomy)
-anova_tapping_err_ave <- get_anova_table(res.aov)
-anova_tapping_err_ave
-
-
-# ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################  
-# pwc <- data_df %>%
-#   group_by(autonomy) %>%
-#   pairwise_t_test(tapping_err_ave ~ noisy_robot, p.adjust.method = "bonferroni")
-# pwc
-# 
-# ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-# data_df %>%
-#   pairwise_t_test(
-#     tapping_err_ave ~ autonomy, paired = TRUE, 
-#     p.adjust.method = "bonferroni"
-#   )
-# 
-# data_df %>%
-#   pairwise_t_test(
-#     tapping_err_ave ~ noisy_robot, 
-#     p.adjust.method = "bonferroni"
-#   )
+######################### Three-way mixed ANOVA test #########################  
+res.aov <- anova_test(data = data_df, dv = tapping_err_long, wid = pid, within = auto_grouped, between = c(noisy_robot, order))
+anova_per_auto <- get_anova_table(res.aov)
+anova_per_auto
 
 ```
 

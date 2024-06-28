@@ -17,11 +17,11 @@ all_df1, sliced_df1 = read_data(1)
 all_df2, sliced_df2 = read_data(2)
 
 # add "noise" columns
-all_df1['noisy_robot'] = Series(["no" for _ in range(all_df1.shape[0])])
-sliced_df1['noisy_robot'] = Series(["no" for _ in range(sliced_df1.shape[0])])
+all_df1['noisy_robot'] = Series(["no_noise" for _ in range(all_df1.shape[0])])
+sliced_df1['noisy_robot'] = Series(["no_noise" for _ in range(sliced_df1.shape[0])])
 
-all_df2['noisy_robot'] = Series(["yes" for _ in range(all_df2.shape[0])])
-sliced_df2['noisy_robot'] = Series(["yes" for _ in range(sliced_df2.shape[0])])
+all_df2['noisy_robot'] = Series(["noise" for _ in range(all_df2.shape[0])])
+sliced_df2['noisy_robot'] = Series(["noise" for _ in range(sliced_df2.shape[0])])
 
 all_df2['pid'] = all_df2['pid'].apply(lambda x: int(x+23))
 sliced_df2['pid'] = sliced_df2['pid'].apply(lambda x: int(x+23))

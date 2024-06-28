@@ -28,7 +28,7 @@ library(ltm)
 ```{r read csv}
 
 setwd("C:/Users/micha/OneDrive/My_GitHub_Repos/HRI/studies_combined/")
-data_df <- read_csv("combined_data.csv", show_col_types = FALSE)
+data_df <- read_csv("sliced_combined_data.csv", show_col_types = FALSE)
 
 ######################### get mean and sd (or se) ######################### 
 data_df %>%
@@ -112,12 +112,20 @@ p
 
 ```{r do plotting}
 
-bxp1 <- ggboxplot(
-  data_df, x = "noisy_robot", y = "per_auto",
-  color = "auto_grouped", palette = "jco",
+bxp <- ggboxplot(
+  data_df, x = "auto_grouped", y = "per_auto",
+  color = "order", palette = "jco",
+  facet.by = "noisy_robot",
   ylim = c(0, 10), add = "jitter"
   )
-bxp1
+bxp
+
+bxp <- ggboxplot(
+  data_df, x = "auto_grouped", y = "per_auto",
+  color = "noisy_robot", palette = "jco",
+  ylim = c(0, 10), add = "jitter"
+  )
+bxp
 
 ```
 
@@ -128,19 +136,20 @@ bxp1
 
 ######################### check for outliers ######################### 
 data_df %>%
-  group_by(autonomy, noisy_robot) %>%
+  group_by(noisy_robot, order, auto_grouped) %>%
   identify_outliers(per_auto)
 
-######################### check normality ######################### 
-ggqqplot(data_df, "per_auto", ggtheme = theme_bw()) + facet_grid(autonomy ~ noisy_robot)
+######################### Shapiro-Wilk test for normality ######################### 
+data_df %>%
+  group_by(noisy_robot, order, auto_grouped) %>%
+  shapiro_test(per_auto)
+
+ggqqplot(data_df, "per_auto", ggtheme = theme_bw()) + facet_grid(auto_grouped ~ noisy_robot, labeller = "label_both")
 
 ######################### check variance homogeneity ######################### 
 data_df %>%
-  group_by(autonomy) %>%
-  levene_test(per_auto ~ noisy_robot)
-
-######################### check covariance homogeneity ######################### 
-box_m(data_df[, "per_auto", drop = FALSE], data_df$noisy_robot)
+  group_by(auto_grouped) %>%
+  levene_test(per_auto ~ noisy_robot*order)
 
 ```
 
@@ -149,30 +158,16 @@ box_m(data_df[, "per_auto", drop = FALSE], data_df$noisy_robot)
 
 ```{r fit model}
 
-######################### Two-way mixed ANOVA test #########################  
-res.aov <- anova_test(data = data_df, dv = per_auto, wid = pid, between = noisy_robot, within = autonomy)
+######################### Three-way mixed ANOVA test #########################  
+res.aov <- anova_test(data = data_df, dv = per_auto, wid = pid, within = auto_grouped, between = c(noisy_robot, order))
 anova_per_auto <- get_anova_table(res.aov)
 anova_per_auto
 
-
-# ######################### SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-# pwc <- data_df %>%
-#   group_by(autonomy) %>%
-#   pairwise_t_test(per_auto ~ noisy_robot, p.adjust.method = "bonferroni")
-# pwc
-# 
-# ######################### NON-SIG 2-WAY INTER: Pairwise comparisons between group levels #########################
-data_df %>%
-  pairwise_t_test(
-    per_auto ~ autonomy, paired = TRUE,
-    p.adjust.method = "bonferroni"
-)
-
-data_df %>%
-  pairwise_t_test(
-    per_auto ~ noisy_robot,
-    p.adjust.method = "bonferroni"
-  )
+######################### Two-way mixed ANOVA test POST-HOC (noisy_robot:auto_grouped) #########################  
+noisy.effect <- data_df %>%
+  group_by(noisy_robot) %>%
+  anova_test(dv = per_auto, wid = pid, within = auto_grouped)
+noisy.effect
 
 ```
 
