@@ -134,7 +134,13 @@ The data logged throughout each of the experimental sessions are written to `.cs
 | NASA-TLX | Self-reported cognitive load levels across all 6 aspects of the [NASA-TLX](https://www.sciencedirect.com/science/article/abs/pii/S0166411508623869) questionnaire |
 | MDMT |  Self-reported trust levels across all 8 dimensions of the [MDMT](https://research.clps.brown.edu/SocCogSci/Measures/CurrentVersion_MDMT.pdf) questionnaire |
 
-We also combined the results from both studies to explore the effect of noisy robot behavior on our interested measures. These are included in the `/studies_combined` folder.
+Within each of the study folders, there are two `csv` files:
+- `all_data.csv`: contains data across **all** autonomy levels
+- `sliced_data.csv`: contains data for only **high** and **low** autonomy levels
+
+We also combined the results from both studies to explore the effect of noisy robot behavior on our interested measures. These are included in the `/studies_combined` folder, similarly stored in separate `csv` files for either **all** or only **high** and **low** autonomy levels.
+
+For the exact steps of data preprocessing, refer to `order.txt` located in the `/study2_results` folder.
 
 
 <br>
